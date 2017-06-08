@@ -147,23 +147,23 @@ class KintaroPreprocessor(grow.Preprocessor):
                         'value': value,
                     }],
                 })
-            if doc.fields.get('cms_id'):
+            if doc.fields.get('kintaro_id'):
                 request = {
                     'repo_id': cms['repo'],
                     'project_id': cms['repo'],
                     'collection_id': cms['collection'],
                     'update_requests': [{
-                        'document_id': doc.fields.get('cms_id'),
+                        'document_id': doc.fields.get('kintaro_id'),
                         'contents': {
                             'fields': fields,
                         },
                     }]
                 }
-                cms_id = doc.fields.get('cms_id')
+                kintaro_id = doc.fields.get('kintaro_id')
                 resp = service.documents().multiDocumentUpdate(body=request).execute(num_retries=3)
                 self.pod.logger.info(
                     'Updated -> {}:{}:{}'.format(
-                        cms['repo'], cms_id, doc.pod_path))
+                        cms['repo'], kintaro_id, doc.pod_path))
             else:
                 request = {
                     'repo_id': cms['repo'],
@@ -174,12 +174,12 @@ class KintaroPreprocessor(grow.Preprocessor):
                     },
                 }
                 resp = service.documents().createDocument(body=request).execute(num_retries=3)
-                cms_id = resp['document_id']
+                kintaro_id = resp['document_id']
                 self.pod.logger.info(
                     'Created -> {}:{}:{}'.format(
-                        cms['repo'], cms_id, doc.pod_path))
+                        cms['repo'], kintaro_id, doc.pod_path))
             new_fields = doc.fields._data
-            new_fields.update({'cms_id': cms_id})
+            new_fields.update({'kintaro_id': kintaro_id})
             doc.format.update(fields=new_fields)
             self.pod.write_file(doc.pod_path, doc.format.to_raw_content())
 
@@ -270,12 +270,12 @@ class KintaroPreprocessor(grow.Preprocessor):
             collection_id=cms['collection'],
             project_id=cms['repo'])
         for entry in entries:
-            cms_id = entry['document_id']
+            kintaro_id = entry['document_id']
             fields, new_body, _ = self._parse_entry(collection, entry)
             ext = '.md' if new_body else '.yaml'
-            doc = self.get_doc_by_document_id(collection, cms_id, ext, fields)
+            doc = self.get_doc_by_document_id(collection, kintaro_id, ext, fields)
             new_fields = doc.fields._data
-            new_fields.update({'cms_id': cms_id})
+            new_fields.update({'kintaro_id': kintaro_id})
             new_fields.update(fields)
             if new_body:
                 new_body = new_body.encode('utf-8')
@@ -284,14 +284,14 @@ class KintaroPreprocessor(grow.Preprocessor):
                 doc.format.update(fields=new_fields)
             self.pod.write_file(doc.pod_path, doc.format.to_raw_content())
             self.pod.logger.info('Saved {}:{} -> {}'.format(
-                cms['repo'], cms_id, doc.pod_path))
+                cms['repo'], kintaro_id, doc.pod_path))
 #        self.bind_collection(entries, collection_pod_path)
 # TODO: Implement deletes.
 
     def get_doc_by_document_id(self, collection, doc_id, ext, fields=None):
         for doc in collection.list_docs():
-            cms_id = doc.fields.get('cms_id')
-            if cms_id == doc_id:
+            kintaro_id = doc.fields.get('kintaro_id')
+            if kintaro_id == doc_id:
                 return doc
         title = fields.get('$title') or doc_id
         title = utils.slugify(title)
@@ -331,34 +331,38 @@ class KintaroPreprocessor(grow.Preprocessor):
         return resp
 
     def get_edit_url(self, doc=None):
-        return ''
-        kintaro_collection = ''
-        kintaro_document = doc.base
-        for binding in self.config.bind:
-            if binding.collection == doc.collection.pod_path:
-                kintaro_collection = binding.kintaro_collection
+        kintaro_id, cms_collection, = self._get_kintaro_ids(doc)
         return KINTARO_EDIT_PATH_FORMAT.format(
             host=self.config.host,
             project=self.config.project,
             repo=self.config.repo,
-            collection=kintaro_collection,
-            document=kintaro_document)
+            collection=cms_collection,
+            document=kintaro_id)
 
     def can_inject(self, doc=None, collection=None):
         if not self.injected:
             return False
         if doc is not None:
-            if doc.fields.get('cms_id'):
+            if doc.fields.get('kintaro_id'):
                 return True
         return False
+
+    def _get_kintaro_ids(self, doc):
+        kintaro_id = doc.fields.get('kintaro_id')
+        if 'kintaro_collection' in doc.fields:
+            kintaro_collection = doc.fields.get('kintaro_collection')
+        elif 'kintaro_collection' in doc.collection.fields:
+            kintaro_collection = doc.fields.get('kintaro_collection')
+        else:
+            raise ValueError('Could not find kintaro collection for: {}'.format(doc))
+        return kintaro_id, kintaro_collection
 
     def inject(self, doc=None, collection=None):
         document_id = doc.base
         if doc is not None:
-            cms_id = doc.fields.get('cms_id')
-            cms_collection = doc.fields.get('cms_collection')
+            kintaro_id, cms_collection = self._get_kintaro_ids(doc)
             entry = self.download_entry(
-                document_id=cms_id,
+                document_id=kintaro_id,
                 collection_id=cms_collection,
                 repo_id=self.config.repo,
                 project_id=self.config.project)
