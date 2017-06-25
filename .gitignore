@@ -1,4 +1,4 @@
 **.mo
-testdata/.podcache
-testdata/build/
-testdata/extensions/
+example/.podcache
+example/build/
+example/extensions/
