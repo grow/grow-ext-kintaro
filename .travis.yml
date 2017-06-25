@@ -11,4 +11,4 @@ script:
 - grow build
 before_install:
 - openssl aes-256-cbc -K $encrypted_369a9ecd01fd_key -iv $encrypted_369a9ecd01fd_iv
-  -in grow-ext-kintaro-ci.json.enc -out grow-ext-kintaro-ci.json -d
+  -in testdata/grow-ext-kintaro-ci.json.enc -out testdata/grow-ext-kintaro-ci.json -d
