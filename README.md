@@ -1,18 +1,24 @@
 # grow-ext-kintaro
 
-(WIP) Kintaro Content Server extension for Grow.
+Kintaro Content Server extension for Grow. Kintaro is a private, headless CMS
+hosted at kintaro-content-server.appspot.com. It can be used to manage
+arbitrary structured data, and using this extension, that arbitrary structured
+data can be consumed in Grow.
 
 ## Concept
 
 This extension binds Grow collections to Kintaro collections and Grow documents
 to Kintaro documents. In other words, when a Kintaro document changes, it
 changes in Grow as well. This allows stakeholders to edit content in Kintaro,
-and developers to build Grow pages consuming Kintaro content without making
-any changes.
+and developers to build Grow pages consuming Kintaro content without writing
+any specialized code or vastly changing their development approach.
 
 Each time a page is rendered, content from Kintaro is injected into the
 corresponding document's fields. Each time a site is built, the Kintaro
 preprocessor runs to update all content locally prior to the full build step.
+
+When documents are deleted from Kintaro, those documents are also deleted in
+Grow.
 
 ## Usage
 
@@ -26,34 +32,31 @@ preprocessor runs to update all content locally prior to the full build step.
 ```
 extensions:
   preprocessors:
-  - ext.kintaro.KintaroPreprocessor
+  - extensions.kintaro.KintaroPreprocessor
 
 preprocessors:
-  - kind: kintaro
+- kind: kintaro
+  repo: example-repo-id
+  project: example-project-id
+  inject: true  # If true, content is injected with each page render.
+  bind:
+  - collection: /content/ExampleCollection1/
+    kintaro_collection: ExampleCollection1
+  - collection: /content/ExampleCollection2/
+    kintaro_collection: ExampleCollection2
 ```
 
-### Bind Grow collections -> Kintaro collections
-
-Binds an entire Grow collection to a Kintaro collection.
-
-```
-# /content/<collection>/_blueprint.yaml
-
-kintaro:
-  repo: RepoID
-  collection: CollectionName
-  auto_project: true  # Optional.
-  project: ProjectID  # Optional.
-```
-
-### Bind Grow documents -> Kintaro documents
-
-Binds a single Grow document to a document in Kintaro. When a collection is
-bound to Kintaro, the `kintaro_id` field is automatically added for each
-document's front matter.
+When documents are downloaded from Kintaro, the basename used for the document
+corresponds to the document's Kintaro document ID. For example, an integration
+with Kintaro might leave you with the following collection:
 
 ```
-# /content/<collection>/<doc>.<ext>
-
-kintaro_id: <kintaro id>
+/content/ExampleCollection/
+  _blueprint.yaml
+  52532525326332.yaml
+  59235872386116.yaml
+  ...
 ```
+
+As usual, your `_blueprint.yaml` file will control the serving behavior of
+content within this collection.

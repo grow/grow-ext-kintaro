@@ -2,13 +2,13 @@ from setuptools import setup
 
 
 setup(
-    name='grow',
-    zip_safe=False,
+    name='grow-ext-kintaro',
+    version='1.0.0',
     license='MIT',
-    author='Grow SDK Authors',
+    author='Grow Authors',
     author_email='hello@grow.io',
     include_package_data=False,
-    py_modules=[
+    packages=[
         'kintaro',
     ],
     install_requires=[
