@@ -2,11 +2,13 @@ cache: pip
 language: python
 python: 2.7
 sudo: false
-
 install:
 - pip install git+git://github.com/grow/grow
-
 script:
 - cd testdata
+- AUTH_KEY_FILE=grow-ext-kintaro-ci.json
 - grow install
 - grow build
+before_install:
+- openssl aes-256-cbc -K $encrypted_369a9ecd01fd_key -iv $encrypted_369a9ecd01fd_iv
+  -in grow-ext-kintaro-ci.json.enc -out grow-ext-kintaro-ci.json -d
