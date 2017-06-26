@@ -46,8 +46,7 @@ class KintaroPreprocessor(grow.Preprocessor):
         project = messages.StringField(3)
         host = messages.StringField(4, default=KINTARO_HOST)
 
-    @staticmethod
-    def create_service(host):
+    def create_service(self, host):
         credentials = oauth.get_or_create_credentials(
             scope=OAUTH_SCOPES, storage_key=STORAGE_KEY)
         http = httplib2.Http(ca_certs=utils.get_cacerts_path())
@@ -109,7 +108,7 @@ class KintaroPreprocessor(grow.Preprocessor):
             self.bind_collection(entries, collection_pod_path)
 
     def download_entries(self, repo_id, collection_id, project_id):
-        service = KintaroPreprocessor.create_service(host=self.config.host)
+        service = self.create_service(host=self.config.host)
         body = {
             'repo_id': repo_id,
             'collection_id': collection_id,
@@ -122,7 +121,7 @@ class KintaroPreprocessor(grow.Preprocessor):
         return resp.get('document_list', {'documents': []})['documents'] or []
 
     def download_entry(self, document_id, collection_id, repo_id, project_id):
-        service = KintaroPreprocessor.create_service(host=self.config.host)
+        service = self.create_service(host=self.config.host)
         resp = service.documents().getDocument(
             document_id=document_id,
             collection_id=collection_id,
