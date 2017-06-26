@@ -30,8 +30,6 @@ discovery.logger.setLevel(logging.WARNING)
 OAUTH_SCOPES = ('https://www.googleapis.com/auth/userinfo.email',
                 'https://www.googleapis.com/auth/kintaro')
 
-_last_run = None
-
 
 class BindingMessage(messages.Message):
     collection = messages.StringField(1)
@@ -40,6 +38,7 @@ class BindingMessage(messages.Message):
 
 class KintaroPreprocessor(grow.Preprocessor):
     KIND = 'kintaro'
+    _last_run = None
 
     class Config(messages.Message):
         bind = messages.MessageField(BindingMessage, 1, repeated=True)
@@ -58,10 +57,10 @@ class KintaroPreprocessor(grow.Preprocessor):
         # manage state ourselves and refresh slightly more often than once
         # per hour.
         now = datetime.datetime.now()
-        if _last_run is None \
-                or now - _last_run >= datetime.timedelta(minutes=50):
+        if self._last_run is None \
+                or now - self._last_run >= datetime.timedelta(minutes=50):
             credentials.refresh(http)
-            _last_run = now
+            self._last_run = now
         url = DISCOVERY_URL.replace('{host}', host)
         return discovery.build('content', 'v1', http=http,
                                discoveryServiceUrl=url)
