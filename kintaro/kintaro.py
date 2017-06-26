@@ -3,6 +3,7 @@ from googleapiclient import errors
 from grow.common import oauth
 from grow.common import utils
 from protorpc import messages
+import datetime
 import json
 import logging
 import grow
@@ -29,6 +30,8 @@ discovery.logger.setLevel(logging.WARNING)
 OAUTH_SCOPES = ('https://www.googleapis.com/auth/userinfo.email',
                 'https://www.googleapis.com/auth/kintaro')
 
+_last_run = None
+
 
 class BindingMessage(messages.Message):
     collection = messages.StringField(1)
@@ -51,11 +54,14 @@ class KintaroPreprocessor(grow.Preprocessor):
         http = httplib2.Http(ca_certs=utils.get_cacerts_path())
         http = credentials.authorize(http)
         # Kintaro's server doesn't seem to be able to refresh expired tokens
-        # properly (responds with a "Stateless token expired" error).  So for
-        # now, automatically refresh tokens each time a service is created. If
-        # this isn't fixed on the Kintaro end, what we can do is implement our
-        # own refresh system (tokens need to be refreshed once per hour).
-        credentials.refresh(http)
+        # properly (responds with a "Stateless token expired" error). So we
+        # manage state ourselves and refresh slightly more often than once
+        # per hour.
+        now = datetime.datetime.now()
+        if _last_run is None \
+                or now - _last_run >= datetime.timedelta(minutes=50):
+            credentials.refresh(http)
+            _last_run = now
         url = DISCOVERY_URL.replace('{host}', host)
         return discovery.build('content', 'v1', http=http,
                                discoveryServiceUrl=url)
@@ -126,11 +132,17 @@ class KintaroPreprocessor(grow.Preprocessor):
             use_json=True).execute()
         return resp
 
+    def _normalize(self, path):
+        return path.rstrip('/') if path else None
+
     def get_edit_url(self, doc=None):
+        if not doc:
+            return
         kintaro_collection = ''
         kintaro_document = doc.base
+        doc_pod_path = self._normalize(doc.collection.pod_path)
         for binding in self.config.bind:
-            if binding.collection == doc.collection.pod_path:
+            if self._normalize(binding.collection) == doc_pod_path:
                 kintaro_collection = binding.kintaro_collection
         return KINTARO_EDIT_PATH_FORMAT.format(
             host=self.config.host,
@@ -148,14 +160,16 @@ class KintaroPreprocessor(grow.Preprocessor):
         return False
 
     def inject(self, doc=None, collection=None):
-        document_id = doc.base
-        for binding in self.config.bind:
-            if binding.collection == doc.collection.pod_path:
-                entry = self.download_entry(
-                    document_id=document_id,
-                    collection_id=binding.kintaro_collection,
-                    repo_id=self.config.repo,
-                    project_id=self.config.project)
-                fields, _, _ = self._parse_entry(entry)
-                doc.inject(fields, body='')
-                return doc
+        if doc:
+            document_id = doc.base
+            doc_pod_path = self._normalize(doc.collection.pod_path)
+            for binding in self.config.bind:
+                if self._normalize(binding.collection) == doc_pod_path:
+                    entry = self.download_entry(
+                        document_id=document_id,
+                        collection_id=binding.kintaro_collection,
+                        repo_id=self.config.repo,
+                        project_id=self.config.project)
+                    fields, _, _ = self._parse_entry(entry)
+                    doc.inject(fields, body='')
+                    return doc
