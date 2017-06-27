@@ -1,3 +1,6 @@
+SHELL := /bin/bash
+PATH := $(PATH):$(HOME)/bin
+
 test:
-	PATH=$(PATH):$(HOME)/bin grow build \
-    example
+	grow install example
+	grow build example

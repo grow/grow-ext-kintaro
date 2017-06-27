@@ -72,30 +72,52 @@ class KintaroPreprocessor(grow.Preprocessor):
         new_pod_paths = []
         for i, entry in enumerate(entries):
             fields, unused_body, basename = self._parse_entry(entry)
-
             # TODO: Ensure `create_doc` doesn't die if the file doesn't exist.
             path = os.path.join(collection.pod_path, basename)
-            path = self.pod.abs_path(path)
-            fp = open(path, 'a')
-            fp.write('{}')
-            fp.close()
-
+            if not self.pod.file_exists(path):
+                self.pod.write_yaml(path, {})
             doc = collection.create_doc(basename, fields=fields, body='')
             new_pod_paths.append(doc.pod_path)
             self.pod.logger.info('Saved -> {}'.format(doc.pod_path))
+
         pod_paths_to_delete = set(existing_pod_paths) - set(new_pod_paths)
         for pod_path in pod_paths_to_delete:
             self.pod.delete_file(pod_path)
             self.pod.logger.info('Deleted -> {}'.format(pod_path))
 
+    def _regroup_schema(self, schema):
+        names_to_fields = {}
+        for field in schema:
+            names_to_fields[field['name']] = field
+        return names_to_fields
+
+    def _parse_field(self, key, value, field_data):
+        if key == 'title':
+            key = '$title'
+        if field_data['translatable']:
+            key = '{}@'.format(key)
+        return key, value
+
     def _parse_entry(self, entry):
         basename = '{}.yaml'.format(entry['document_id'])
-        fields = entry.get('content_json', {})
+        schema = entry.get('schema', {})
+        schema_fields = schema.get('schema_fields', [])
+        names_to_schema_fields = self._regroup_schema(schema_fields)
+        fields = entry.get('content_json', '{}')
         fields = json.loads(fields)
-        if 'title' in fields:
-            fields['$title'] = fields.pop('title')
+        clean_fields = {}
+        for name, value in fields.iteritems():
+            field_data = names_to_schema_fields[name]
+            key, value = self._parse_field(name, value, field_data)
+            clean_fields[key] = value
+        # Populate $meta.
+        if schema:
+            # Strip modified info from schema.
+            schema.pop('mod_info', None)
+            clean_fields['$meta'] = {}
+            clean_fields['$meta']['schema'] = schema
         body = ''
-        return fields, body, basename
+        return clean_fields, body, basename
 
     def run(self, *args, **kwargs):
         for binding in self.config.bind:
@@ -119,7 +141,13 @@ class KintaroPreprocessor(grow.Preprocessor):
             }
         }
         resp = service.documents().searchDocuments(body=body).execute()
-        return resp.get('document_list', {'documents': []})['documents'] or []
+        documents = resp.get('document_list', {}).get('documents', [])
+        schema = resp.get('schema', {})
+        # Reformat document response to include schema.
+        for document in documents:
+            document['schema'] = schema
+        return documents
+        return documents, schema
 
     def download_entry(self, document_id, collection_id, repo_id, project_id):
         service = self.create_service(host=self.config.host)
