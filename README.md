@@ -3,9 +3,10 @@
 [![Build Status](https://travis-ci.org/grow/grow-ext-kintaro.svg?branch=master)](https://travis-ci.org/grow/grow-ext-kintaro)
 
 Kintaro Content Server extension for Grow. Kintaro is a private, headless CMS
-hosted at kintaro-content-server.appspot.com. It can be used to manage
-arbitrary structured data, and using this extension, that arbitrary structured
-data can be consumed in Grow.
+hosted at
+[kintaro-content-server.appspot.com](https://kintaro-content-server.appspot.com).
+It can be used to manage arbitrary structured data, and using this extension,
+that arbitrary structured data can be consumed in Grow.
 
 ## Concept
 

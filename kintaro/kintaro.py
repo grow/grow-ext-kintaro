@@ -115,6 +115,7 @@ class KintaroPreprocessor(grow.Preprocessor):
             'project_id': project_id,
             'result_options': {
                 'return_json': True,
+                'return_schema': True,
             }
         }
         resp = service.documents().searchDocuments(body=body).execute()
@@ -127,6 +128,7 @@ class KintaroPreprocessor(grow.Preprocessor):
             collection_id=collection_id,
             project_id=project_id,
             repo_id=repo_id,
+            include_schema=True,
             use_json=True).execute()
         return resp
 
