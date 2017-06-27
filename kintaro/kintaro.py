@@ -36,15 +36,8 @@ class BindingMessage(messages.Message):
     kintaro_collection = messages.StringField(2)
 
 
-class KintaroPreprocessor(grow.Preprocessor):
-    KIND = 'kintaro'
+class _GoogleServicePreprocessor(grow.Preprocessor):
     _last_run = None
-
-    class Config(messages.Message):
-        bind = messages.MessageField(BindingMessage, 1, repeated=True)
-        repo = messages.StringField(2)
-        project = messages.StringField(3)
-        host = messages.StringField(4, default=KINTARO_HOST)
 
     def create_service(self, host):
         credentials = oauth.get_or_create_credentials(
@@ -63,6 +56,16 @@ class KintaroPreprocessor(grow.Preprocessor):
         url = DISCOVERY_URL.replace('{host}', host)
         return discovery.build('content', 'v1', http=http,
                                discoveryServiceUrl=url)
+
+
+class KintaroPreprocessor(_GoogleServicePreprocessor):
+    KIND = 'kintaro'
+
+    class Config(messages.Message):
+        bind = messages.MessageField(BindingMessage, 1, repeated=True)
+        repo = messages.StringField(2)
+        project = messages.StringField(3)
+        host = messages.StringField(4, default=KINTARO_HOST)
 
     def bind_collection(self, entries, collection_pod_path):
         collection = self.pod.get_collection(collection_pod_path)
@@ -118,16 +121,6 @@ class KintaroPreprocessor(grow.Preprocessor):
             clean_fields['$meta']['schema'] = schema
         body = ''
         return clean_fields, body, basename
-
-    def run(self, *args, **kwargs):
-        for binding in self.config.bind:
-            collection_pod_path = binding.collection
-            kintaro_collection = binding.kintaro_collection
-            entries = self.download_entries(
-                repo_id=self.config.repo,
-                collection_id=kintaro_collection,
-                project_id=self.config.project)
-            self.bind_collection(entries, collection_pod_path)
 
     def download_entries(self, repo_id, collection_id, project_id):
         service = self.create_service(host=self.config.host)
@@ -201,3 +194,13 @@ class KintaroPreprocessor(grow.Preprocessor):
                     fields, _, _ = self._parse_entry(entry)
                     doc.inject(fields, body='')
                     return doc
+
+    def run(self, *args, **kwargs):
+        for binding in self.config.bind:
+            collection_pod_path = binding.collection
+            kintaro_collection = binding.kintaro_collection
+            entries = self.download_entries(
+                repo_id=self.config.repo,
+                collection_id=kintaro_collection,
+                project_id=self.config.project)
+            self.bind_collection(entries, collection_pod_path)
