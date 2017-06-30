@@ -69,3 +69,19 @@ content within this collection.
 Kintaro is a headless CMS, where content can be managed independently of site structure. The content in Kintaro can then be downloaded into a Grow project, and then adapted in various ways.
 
 ![image](https://user-images.githubusercontent.com/646525/27755074-71e4a9d0-5da2-11e7-9532-cb43c5472a8d.png)
+
+### General process
+
+1. Visit Kintaro ([kintaro-content-server.appspot.com](https://kintaro-content-server.appspot.com)).
+1. Choose your an existing project, or - if you have access - start a new project.
+1. Create **Schemas**. This is where you specify content structure for all content in the system – from small, atomic nested content, to entire pages.
+1. Create **Collections**. This is where you specify all main content types in the system.
+1. Add **Documents** to each **Collection**.
+1. Configure `podspec.yaml` to bind Kintaro collections to Grow collections.
+1. Run `grow preprocess` to download content from Kintaro to Grow.
+
+### Notes and style guide
+
+- Names should be singular (for Collections, Schemas, and Fields). For example, if you have a repeated field for blog post tags, the field name should be **Tag** (not Tags).
+- Reusable content should be placed into its own Collection, and then embedded within Documents via **ReferenceFields**.
+- Kintaro does not support multiple schemas per collection, so if you would like to use Kintaro for pages, it is best to create one collection per page type.
