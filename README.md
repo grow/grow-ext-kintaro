@@ -85,3 +85,7 @@ Kintaro is a headless CMS, where content can be managed independently of site st
 - Names should be singular (for Collections, Schemas, and Fields). For example, if you have a repeated field for blog post tags, the field name should be **Tag** (not Tags).
 - Reusable content should be placed into its own Collection, and then embedded within Documents via **ReferenceFields**.
 - Kintaro does not support multiple schemas per collection, so if you would like to use Kintaro for pages, it is best to create one collection per page type.
+
+### Translations
+
+Kintaro supports field translation. Simply mark a field as **"translatable"** within the schema editor and the field will be available for translation. When content is synchronized to Grow, the field name is suffixed with `@` – indicating it should be extracted for translation. Content managed in Kintaro can then be extracted per the normal translation process with Grow – leveraging PO files and external translators.
