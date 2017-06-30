@@ -4,11 +4,11 @@ from grow.common import oauth
 from grow.common import utils
 from protorpc import messages
 import datetime
+import grow
+import httplib2
 import json
 import logging
-import grow
 import os
-import httplib2
 
 
 KINTARO_HOST = 'kintaro-content-server.appspot.com'
@@ -165,12 +165,13 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         for binding in self.config.bind:
             if self._normalize(binding.collection) == doc_pod_path:
                 kintaro_collection = binding.kintaro_collection
-        return KINTARO_EDIT_PATH_FORMAT.format(
-            host=self.config.host,
-            project=self.config.project,
-            repo=self.config.repo,
-            collection=kintaro_collection,
-            document=kintaro_document)
+        if kintaro_collection:
+            return KINTARO_EDIT_PATH_FORMAT.format(
+                host=self.config.host,
+                project=self.config.project,
+                repo=self.config.repo,
+                collection=kintaro_collection,
+                document=kintaro_document)
 
     def can_inject(self, doc=None, collection=None):
         if not self.injected:
