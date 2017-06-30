@@ -63,3 +63,9 @@ with Kintaro might leave you with the following collection:
 
 As usual, your `_blueprint.yaml` file will control the serving behavior of
 content within this collection.
+
+## Kintaro quick intro
+
+Kintaro is a headless CMS, where content can be managed independently of site structure. The content in Kintaro can then be downloaded into a Grow project, and then adapted in various ways.
+
+![image](https://user-images.githubusercontent.com/646525/27755074-71e4a9d0-5da2-11e7-9532-cb43c5472a8d.png)
