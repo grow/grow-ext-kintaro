@@ -95,8 +95,11 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         return names_to_fields
 
     def _parse_field(self, key, value, field_data):
+        # Convert Kintaro keys to Grow built-ins.
         if key == 'title':
             key = '$title'
+        elif key == 'order':
+            key = '$order'
         if field_data['translatable']:
             key = '{}@'.format(key)
         return key, value
@@ -140,7 +143,6 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         for document in documents:
             document['schema'] = schema
         return documents
-        return documents, schema
 
     def download_entry(self, document_id, collection_id, repo_id, project_id):
         service = self.create_service(host=self.config.host)
