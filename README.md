@@ -69,7 +69,7 @@ content within this collection.
 
 Kintaro is a headless CMS, where content can be managed independently of site structure. The content in Kintaro can then be downloaded into a Grow project, and then adapted in various ways.
 
-![image](https://user-images.githubusercontent.com/646525/27755074-71e4a9d0-5da2-11e7-9532-cb43c5472a8d.png)
+![](https://user-images.githubusercontent.com/646525/27766028-ab20235c-5e77-11e7-9593-385cb3dedf16.png)
 
 ### General process
 
