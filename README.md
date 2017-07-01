@@ -41,7 +41,8 @@ preprocessors:
 - kind: kintaro
   repo: example-repo-id
   project: example-project-id
-  inject: true  # If true, content is injected with each page render.
+  project@env.prod: ~  # Set `project` to null in prod to build only published content.
+  inject: true  # If true, content is injected with each page render.
   bind:
   - collection: /content/ExampleCollection1/
     kintaro_collection: ExampleCollection1
@@ -89,3 +90,27 @@ Kintaro is a headless CMS, where content can be managed independently of site st
 ### Translations
 
 Kintaro supports field translation. Simply mark a field as **"translatable"** within the schema editor and the field will be available for translation. When content is synchronized to Grow, the field name is suffixed with `@` – indicating it should be extracted for translation. Content managed in Kintaro can then be extracted per the normal translation process with Grow – leveraging PO files and external translators.
+
+### Draft vs. published
+
+Kintaro supports draft and published content. By using Grow's YAML syntax that varies on the environment name, you can specify when to pull draft content and when to pull published content from Kintaro. Note that the way to indicate to Kintaro that we want published content is to set `project` to `~` (`None`). So, if you wanted to only ever see published content, you would set `project: ~`.
+
+The sample configuration below shows how to display draft content on the development server and in staging, and published content in production (e.g. when using a deployment target named `foo`).
+
+```
+# Conditionally pull draft or published content for `grow deploy foo`.
+# podspec.yaml
+
+preprocessors:
+- kind: kintaro
+  repo: example-repo-id
+  project: example-project-id
+  project@env.prod: ~  # Set `project` to null in prod to build only published content.
+  [...]
+
+deployments:
+  foo:
+    env:
+      name: prod  # For env.prod above.
+      [...]
+```
