@@ -85,7 +85,21 @@ Kintaro is a headless CMS, where content can be managed independently of site st
 
 - Names should be singular (for Collections, Schemas, and Fields). For example, if you have a repeated field for blog post tags, the field name should be **Tag** (not Tags).
 - Reusable content should be placed into its own Collection, and then embedded within Documents via **ReferenceFields**.
-- Kintaro does not support multiple schemas per collection, so if you would like to use Kintaro for pages, it is best to create one collection per page type.
+- Kintaro does not support multiple schemas per collection, so if you would like to use Kintaro to produce individual pages with different structures, it is best to create one collection per page type. The convention to use here is to name single-page collections named like **PageFoo** and **PageBar**.
+
+A sample repository might look like the following. The idea is to be able to easily infer the taxonomoy of a website by reading the names of collections. In this example, we have a three-page site (**Index**, **About**, and **Gallery**), with four different types of partials and two other atomic pieces of content (**Card** and **Link**).
+
+```
+Card
+Link
+PartialHero
+PartialTwoCol
+PartialThreeCol
+PartialCards
+PageIndex
+PageAbout
+PageGallery
+```
 
 ### Translations
 
