@@ -9,5 +9,7 @@ preprocessors:
   repo: grow-base-kintaro 
   project: grow-base-kintaro
   bind:
-    collection: /content/Product
+  - collection: /content/Product
     kintaro_collection: Product
+  - collection: /content/Page
+    kintaro_collection: Page

@@ -1,0 +1,10 @@
+{% extends "/views/base.html" %}
+
+{% block main %}
+  {% for field in doc.fields.get('$meta').schema.schema_fields
+      if field.description.startswith('partial: ') %}
+    {% set basename = field.description.replace('partial: ', '') %}
+    {% set partial = doc.fields.get(field.name) %}
+    {% include "/views/partials/" ~ basename ~ ".html" with context %}
+  {% endfor %}
+{% endblock %}

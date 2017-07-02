@@ -1,0 +1,12 @@
+<div class="two-columns">
+  {% for column in partial.column %}
+    <div class="two-columns__column">
+      <div class="two-columns__column__title">
+        {{_(column.title)}}
+      </div>
+      <div class="two-columns__column__body">
+        {{_(column.body)}}
+      </div>
+    </div>
+  {% endfor %}
+</div>
