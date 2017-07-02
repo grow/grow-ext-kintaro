@@ -128,3 +128,23 @@ deployments:
       name: prod  # For env.prod above.
       [...]
 ```
+
+### Partials
+
+In Grow, **partials** are a way to build pages by including a series of modules
+in a specific order and then rendering templates in order. For example, a page
+might be built by rendering a hero, a two-column section, and a body section.
+Each partial is a different unit of content (in YAML) and a corresponding
+template.
+
+You can bind a schema to partials with the following hack. Make use of the
+value of each field's `description` which you can set in Kintaro's schema
+editor. Then, use a template that iterates over the fields on a schema,
+determines if the field contains a description that starts with `partial: `,
+and then renders the template if so.
+
+This repository contains a complete example in:
+
+- `/content/Page/...`
+- `/views/partials.html`
+- `/views/partials/`

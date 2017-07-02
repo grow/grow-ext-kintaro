@@ -1,6 +1,9 @@
 {% extends "/views/base.html" %}
 
 {% block main %}
+  {# Determine partial to render by iterating over fields, reading the
+     description, and determining whether the field corresponds to a partial.
+  #}
   {% for field in doc.fields.get('$meta').schema.schema_fields
       if field.description.startswith('partial: ') %}
     {% set basename = field.description.replace('partial: ', '') %}
