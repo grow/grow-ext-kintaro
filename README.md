@@ -145,6 +145,6 @@ and then renders the template if so.
 
 This repository contains a complete example in:
 
-- `/content/Page/...`
+- `/content/Page/...documents...
 - `/views/partials.html`
-- `/views/partials/`
+- `/views/partials/...templates...
