@@ -1,2 +1,8 @@
 $path: /{slug}/
 $view: /views/partials.html
+
+# Maps Kintaro schema to partial from /views/partials/.
+schemas_to_partials:
+  sectionBody: body
+  sectionHero: hero
+  sectionTwoColumn: two-column

@@ -47,7 +47,7 @@ $meta:
       can_be_translated: false
       can_index: false
       can_index_repeated: false
-      description: 'partial: hero'
+      description: ''
       displayed: false
       indexed: false
       label: false
@@ -108,7 +108,7 @@ $meta:
       can_be_translated: false
       can_index: false
       can_index_repeated: false
-      description: 'partial: two-column'
+      description: ''
       displayed: false
       indexed: false
       label: false
@@ -193,7 +193,7 @@ $meta:
       can_be_translated: false
       can_index: false
       can_index_repeated: false
-      description: 'partial: body'
+      description: ''
       displayed: false
       indexed: false
       label: false

@@ -137,11 +137,41 @@ might be built by rendering a hero, a two-column section, and a body section.
 Each partial is a different unit of content (in YAML) and a corresponding
 template.
 
-You can bind a schema to partials with the following hack. Make use of the
-value of each field's `description` which you can set in Kintaro's schema
-editor. Then, use a template that iterates over the fields on a schema,
-determines if the field contains a description that starts with `partial: `,
-and then renders the template if so.
+You can bind a schema to a partial through various approaches. One technique
+illustrated in the example is to keep a mapping of Kintaro schema name to Grow
+partial name within a collection's `_blueprint.yaml` and then iterating over
+the fields in a document, rendering partials as found.
+
+In a collection's `_blueprint.yaml`:
+
+```
+schemas_to_partials:
+  sectionHero: hero
+  sectionTwoColumn: two-column
+  sectionBody: body
+```
+
+In a template rendering a document:
+
+```
+{% for field in doc.fields.get('$meta').schema.schema_fields %}
+  {# Determine whether the field corresponds to a partial. #}
+  {% set basename = doc.collection.schemas_to_partials.get(field.name) %}
+
+  {# If the schema name is not mapped to a partial, skip. #}
+  {% if not basename %}
+    {% continue %}
+  {% endif %}
+
+  {# Render the partial with the field values in {{partial}}. #}
+  {% with partial = doc.fields.get(field.name) %}
+    {% include "/views/partials/" ~ basename ~ ".html" with context %}
+  {% endwith %}
+{% endfor %}
+```
+
+As new schemas are added to Kintaro, simply add an appropriate mapping in
+`_blueprint.yaml` (or elsewhere) to determine the corresponding partial.
 
 This repository contains a complete example in:
 
