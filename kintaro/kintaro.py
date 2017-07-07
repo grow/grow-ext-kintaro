@@ -178,9 +178,11 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
     def can_inject(self, doc=None, collection=None):
         if not self.injected:
             return False
-        for binding in self.config.bind:
-            if binding.collection == doc.collection.pod_path:
-                return True
+        if doc:
+            doc_pod_path = self._normalize(doc.collection.pod_path)
+            for binding in self.config.bind:
+                if self._normalize(binding.collection) == doc_pod_path:
+                    return True
         return False
 
     def inject(self, doc=None, collection=None):

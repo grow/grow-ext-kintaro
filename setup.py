@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='grow-ext-kintaro',
-    version='1.0.0',
+    version='1.0.1',
     license='MIT',
     author='Grow Authors',
     author_email='hello@grow.io',
