@@ -142,6 +142,8 @@ illustrated in the example is to keep a mapping of Kintaro schema name to Grow
 partial name within a collection's `_blueprint.yaml` and then iterating over
 the fields in a document, rendering partials as found.
 
+![image](https://user-images.githubusercontent.com/646525/27977630-72319c94-6320-11e7-8283-1b62646f696e.png)
+
 In a collection's `_blueprint.yaml`:
 
 ```
