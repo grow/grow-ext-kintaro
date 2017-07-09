@@ -3,7 +3,7 @@
 {% block main %}
   {% for field in doc.fields.get('$meta').schema.schema_fields %}
     {# Determine whether the field corresponds to a partial. #}
-    {% set basename = doc.collection.schemas_to_partials.get(field.name) %}
+    {% set basename = doc.collection.schemas_to_partials.get(field.schema_name) %}
 
     {# If the schema name is not mapped to a partial, skip. #}
     {% if not basename %}
