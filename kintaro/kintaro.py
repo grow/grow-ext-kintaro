@@ -118,6 +118,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         fields = entry.get('content_json', '{}')
         fields = json.loads(fields)
         clean_fields = {}
+        # Overwrite all unprefixed keys with CMS data.
         for name, value in fields.iteritems():
             field_data = names_to_schema_fields[name]
             key, value = self._parse_field(name, value, field_data)
@@ -133,7 +134,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         if schema:
             # Strip modified info from schema.
             schema.pop('mod_info', None)
-            clean_fields['$meta'] = {}
+            clean_fields['$meta'] = clean_fields.get('$meta', {})
             clean_fields['$meta']['schema'] = schema
         body = ''
         return clean_fields, body, basename
