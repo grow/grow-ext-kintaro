@@ -74,11 +74,14 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             for doc in collection.docs(recursive=False, inject=False)]
         new_pod_paths = []
         for i, entry in enumerate(entries):
-            fields, unused_body, basename = self._parse_entry(entry)
             # TODO: Ensure `create_doc` doesn't die if the file doesn't exist.
+            basename = self._get_basename_from_entry(entry)
             path = os.path.join(collection.pod_path, basename)
             if not self.pod.file_exists(path):
                 self.pod.write_yaml(path, {})
+            doc_pod_path = os.path.join(collection.pod_path, basename)
+            doc = collection.get_doc(doc_pod_path)
+            fields, unused_body, basename = self._parse_entry(doc, entry)
             doc = collection.create_doc(basename, fields=fields, body='')
             new_pod_paths.append(doc.pod_path)
             self.pod.logger.info('Saved -> {}'.format(doc.pod_path))
@@ -104,8 +107,11 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             key = '{}@'.format(key)
         return key, value
 
-    def _parse_entry(self, entry):
-        basename = '{}.yaml'.format(entry['document_id'])
+    def _get_basename_from_entry(self, entry):
+        return '{}.yaml'.format(entry['document_id'])
+
+    def _parse_entry(self, doc, entry):
+        basename = self._get_basename_from_entry(entry)
         schema = entry.get('schema', {})
         schema_fields = schema.get('schema_fields', [])
         names_to_schema_fields = self._regroup_schema(schema_fields)
@@ -116,6 +122,13 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             field_data = names_to_schema_fields[name]
             key, value = self._parse_field(name, value, field_data)
             clean_fields[key] = value
+        # Preserve existing built-in fields prefixed with $.
+        front_matter_data = doc.format.front_matter.data
+        if front_matter_data:
+            for key, value in front_matter_data.iteritems():
+                if not key.startswith('$'):
+                    continue
+                clean_fields[key] = value
         # Populate $meta.
         if schema:
             # Strip modified info from schema.
@@ -196,7 +209,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                         collection_id=binding.kintaro_collection,
                         repo_id=self.config.repo,
                         project_id=self.config.project)
-                    fields, _, _ = self._parse_entry(entry)
+                    fields, _, _ = self._parse_entry(doc, entry)
                     doc.inject(fields, body='')
                     return doc
 
