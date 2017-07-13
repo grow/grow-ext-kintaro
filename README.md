@@ -180,3 +180,63 @@ This repository contains a complete example in:
 - `/content/Page/...documents...`
 - `/views/partials.html`
 - `/views/partials/...templates...`
+
+## A note on API access to Kintaro
+
+If you've never authorized Grow to access your Kintaro data before, a
+permissions dialog will display to walk you through the authorization flow when
+using Grow's development server.
+
+You can also use service accounts to authenticate to Kintaro, using one of the
+techniques below.
+
+### Service account key creation
+
+If you would like to set up non-interactive access to Kintaro, you can do so by
+using a service account key.
+
+```
+# Create a Google Cloud project (only if you don't have one already).
+gcloud projects create <project>
+
+# Create a service account (in this example, the service account is named
+# "grow-kintaro-read-only").
+gcloud --project=<project> \
+  iam service-accounts create \
+  grow-kintaro-read-only
+
+# Create and download a key for the service account.
+gcloud --project=<project> \
+  iam service-accounts keys create \
+	--iam-account grow-kintaro-read-only@<project>.iam.gserviceaccount.com \
+  auth-key.json
+```
+
+By default, Grow will use a file named `auth-key.json` when making
+authenticated requests to Google APIs, including Kintaro. You can use this key
+in a CI environment or elsewhere.
+
+Note that this key should be treated with care – anyone with this key can make
+requests acting as that service account. It is typically not advised to commit
+a key to source control, so this file should be added to `.gitignore` or
+encrypted with your CI service and decrypted during build.
+
+Alternatively, you can consider adding the key to source control if you limit
+the service account's permissions to *read only, project-specific Kintaro
+data*. Know this means that anyone with access to the repository would then
+also have read access to Kintaro data.
+
+Lastly, you'll need to share your Kintaro project with the service account you
+just created. Use the following email address when granting access (replace
+<project> with your Google Cloud project name):
+`grow-kintaro-read-only@$<project>.iam.gserviceaccount.com`.
+
+### Default service account on Google App Engine
+
+If you are deploying a Grow development server to Google App Engine, Grow will
+autodetect the environment and use the App Engine default service account when
+making requests to Kintaro.
+
+In this environment, share your Kintaro project with the App Engine
+application's service account, usually formatted as:
+`<appid>@appspot.gserviceaccount.com`.
