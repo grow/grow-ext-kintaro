@@ -99,10 +99,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
     def _parse_field(self, key, value, field_data):
         # Convert Kintaro keys to Grow built-ins.
-        if key == 'title':
-            key = '$title'
-        elif key == 'order':
-            key = '$order'
+        if key.endswith('_'):
+            key = '${}'.format(key[:-1])
         if field_data['translatable']:
             key = '{}@'.format(key)
         return key, value
