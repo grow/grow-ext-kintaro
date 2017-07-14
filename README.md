@@ -165,7 +165,7 @@ In a template rendering a document:
   {% endif %}
 
   {# Determine whether the field corresponds to a partial. #}
-  {% set partial_filename = field.schema_name|kintaro_partial %}
+  {% set partial_filename = field.schema_name|kintaro.schema_name_to_partial %}
 
   {# If the schema name is not mapped to a partial, skip. #}
   {% if not partial_filename %}
