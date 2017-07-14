@@ -234,10 +234,10 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             self.bind_collection(entries, collection_pod_path)
 
 
-def schema_name_to_partial(value, sep='-', directory='partials'):
+def schema_name_to_partial(value, sep='-', directory='partials', prefix='partial'):
     """Parse a kintaro schema name to determine if it is a partial."""
-    if value.lower().startswith('partial'):
-        basename = value[len('Partial'):]
+    if value.lower().startswith(prefix):
+        basename = value[len(prefix):]
         basename = PARTIAL_CONVERSION.sub(r'{}\1'.format(sep), basename)[1:]
         return '/views/{}/{}.html'.format(directory, basename.lower())
     return None
