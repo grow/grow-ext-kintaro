@@ -100,7 +100,12 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
     def _parse_field(self, key, value, field_data):
         # Convert Kintaro keys to Grow built-ins.
-        if key in documents.BUILT_IN_FIELDS:
+        if hasattr(documents, 'BUILT_IN_FIELDS'):
+            built_in_fields = documents.BUILT_IN_FIELDS
+        else:
+            # Support older versions of grow.
+            built_in_fields = ['title', 'order']
+        if key in built_in_fields:
             key = '${}'.format(key)
         if field_data['translatable']:
             key = '{}@'.format(key)
