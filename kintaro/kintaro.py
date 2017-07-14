@@ -2,6 +2,7 @@ from googleapiclient import discovery
 from googleapiclient import errors
 from grow.common import oauth
 from grow.common import utils
+from grow.pods import documents
 from protorpc import messages
 import datetime
 import grow
@@ -99,8 +100,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
     def _parse_field(self, key, value, field_data):
         # Convert Kintaro keys to Grow built-ins.
-        if key.endswith('_'):
-            key = '${}'.format(key[:-1])
+        if key in documents.BUILT_IN_FIELDS:
+            key = '${}'.format(key)
         if field_data['translatable']:
             key = '{}@'.format(key)
         return key, value
