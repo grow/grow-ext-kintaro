@@ -35,7 +35,7 @@ Grow.
 ```
 extensions:
   jinja2:
-  - extensions.kintaro.KintaroJinja2
+  - extensions.kintaro.KintaroExtension
   preprocessors:
   - extensions.kintaro.KintaroPreprocessor
 

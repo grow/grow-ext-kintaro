@@ -230,7 +230,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             self.bind_collection(entries, collection_pod_path)
 
 
-def kintaro_partial(value, sep='-', directory='partials'):
+def schema_name_to_partial(value, sep='-', directory='partials'):
     """Parse a kintaro schema name to determine if it is a partial."""
     if value.lower().startswith('partial'):
         basename = value[len('Partial'):]
@@ -239,9 +239,9 @@ def kintaro_partial(value, sep='-', directory='partials'):
     return None
 
 
-class KintaroJinja2(Extension):
+class KintaroExtension(Extension):
     """Add a filter for jinja2 that assists with kintaro transformations."""
 
     def __init__(self, environment):
-        super(KintaroJinja2, self).__init__(environment)
-        environment.filters['kintaro_partial'] = kintaro_partial
+        super(KintaroExtension, self).__init__(environment)
+        environment.filters['kintaro.schema_name_to_partial'] = schema_name_to_partial
