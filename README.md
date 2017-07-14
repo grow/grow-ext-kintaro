@@ -101,12 +101,6 @@ PageAbout
 PageGallery
 ```
 
-### Built-in fields
-
-Certain built-in fields are specially named in Grow, such as `$title` and `$path`. Kintaro does not support special characters in the field names. To be able to use the built in fields end the field name in Kintaro with an underscore.
-
-For example, a field named `path_` in Kintaro will be converted to `$path` when downloaded to the Grow pod.
-
 ### Translations
 
 Kintaro supports field translation. Simply mark a field as **"translatable"** within the schema editor and the field will be available for translation. When content is synchronized to Grow, the field name is suffixed with `@` – indicating it should be extracted for translation. Content managed in Kintaro can then be extracted per the normal translation process with Grow – leveraging PO files and external translators.
