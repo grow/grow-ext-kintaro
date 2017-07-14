@@ -34,6 +34,8 @@ Grow.
 
 ```
 extensions:
+  jinja2:
+  - extensions.kintaro.KintaroJinja2
   preprocessors:
   - extensions.kintaro.KintaroPreprocessor
 
@@ -157,17 +159,22 @@ In a template rendering a document:
 
 ```
 {% for field in doc.fields.get('$meta').schema.schema_fields %}
+  {# If the schema name is not set, skip. #}
+  {% if not field.schema_name %}
+    {% continue %}
+  {% endif %}
+
   {# Determine whether the field corresponds to a partial. #}
-  {% set basename = doc.collection.schemas_to_partials.get(field.schema_name) %}
+  {% set partial_filename = field.schema_name|kintaro_partial %}
 
   {# If the schema name is not mapped to a partial, skip. #}
-  {% if not basename %}
+  {% if not partial_filename %}
     {% continue %}
   {% endif %}
 
   {# Render the partial with the field values in {{partial}}. #}
   {% with partial = doc.fields.get(field.name) %}
-    {% include "/views/partials/" ~ basename ~ ".html" with context %}
+    {% include partial_filename with context %}
   {% endwith %}
 {% endfor %}
 ```
