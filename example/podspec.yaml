@@ -1,4 +1,6 @@
 extensions:
+  jinja2:
+  - extensions.kintaro.KintaroExtension
   preprocessors:
   - extensions.kintaro.KintaroPreprocessor
 
@@ -6,7 +8,7 @@ preprocessors:
 - kind: kintaro
   autorun: true
   inject: true
-  repo: grow-base-kintaro 
+  repo: grow-base-kintaro
   project: grow-base-kintaro
   bind:
   - collection: /content/Product

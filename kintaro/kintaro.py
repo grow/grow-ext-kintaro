@@ -1,15 +1,19 @@
+"""Kintaro extension for integrating Kintaro into Grow sites."""
+
+import datetime
+import json
+import logging
+import os
+import re
+import grow
+import httplib2
 from googleapiclient import discovery
 from googleapiclient import errors
 from grow.common import oauth
 from grow.common import utils
 from grow.pods import documents
+from jinja2.ext import Extension
 from protorpc import messages
-import datetime
-import grow
-import httplib2
-import json
-import logging
-import os
 
 
 KINTARO_HOST = 'kintaro-content-server.appspot.com'
@@ -22,6 +26,7 @@ KINTARO_EDIT_PATH_FORMAT = (
     '/repo/{repo}'
     '/collection/{collection}'
     '/document/{document}/edit')
+PARTIAL_CONVERSION = re.compile(r'([A-Z])')
 STORAGE_KEY = 'Grow SDK - Kintaro'
 
 # Silence extra logging from googleapiclient.
@@ -227,3 +232,20 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                 collection_id=kintaro_collection,
                 project_id=self.config.project)
             self.bind_collection(entries, collection_pod_path)
+
+
+def schema_name_to_partial(value, sep='-', directory='partials', prefix='partial'):
+    """Parse a kintaro schema name to determine if it is a partial."""
+    if value.lower().startswith(prefix):
+        basename = value[len(prefix):]
+        basename = PARTIAL_CONVERSION.sub(r'{}\1'.format(sep), basename)[1:]
+        return '/views/{}/{}.html'.format(directory, basename.lower())
+    return None
+
+
+class KintaroExtension(Extension):
+    """Add a filter for jinja2 that assists with kintaro transformations."""
+
+    def __init__(self, environment):
+        super(KintaroExtension, self).__init__(environment)
+        environment.filters['kintaro.schema_name_to_partial'] = schema_name_to_partial
