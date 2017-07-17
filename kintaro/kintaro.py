@@ -72,6 +72,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         repo = messages.StringField(2)
         project = messages.StringField(3)
         host = messages.StringField(4, default=KINTARO_HOST)
+        use_index = messages.BooleanField(5, default=True)
 
     def bind_collection(self, entries, collection_pod_path):
         collection = self.pod.get_collection(collection_pod_path)
@@ -148,6 +149,33 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         body = ''
         return clean_fields, body, basename
 
+    def _get_documents_from_search(self, repo_id, collection_id, project_id, documents):
+        results = []
+        for document in documents:
+            document_id = document['document_id']
+            entry = self.download_entry(
+                    document_id, collection_id, repo_id, project_id)
+            results.append(entry)
+        return results
+        # TODO: Upgrade Grow's google api python client, use it to batch requests.
+        service = self.create_service(host=self.config.host)
+        batch = service.new_batch_http_request()
+        results = []
+        def _add(entry):
+            results.append(entry)
+        for document in documents:
+            document_id = document['document_id']
+            req = service.documents().getDocument(
+                document_id=document_id,
+                collection_id=collection_id,
+                project_id=project_id,
+                repo_id=repo_id,
+                include_schema=True,
+                use_json=True)
+            batch.add(req, callback=_add)
+        batch.execute()
+        return results
+
     def download_entries(self, repo_id, collection_id, project_id):
         service = self.create_service(host=self.config.host)
         body = {
@@ -161,8 +189,12 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         }
         resp = service.documents().searchDocuments(body=body).execute()
         documents = resp.get('document_list', {}).get('documents', [])
-        schema = resp.get('schema', {})
+        if not self.config.use_index:
+            documents_from_get = self._get_documents_from_search(
+                    repo_id, collection_id, project_id, documents)
+            return documents_from_get
         # Reformat document response to include schema.
+        schema = resp.get('schema', {})
         for document in documents:
             document['schema'] = schema
         return documents
