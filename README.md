@@ -238,6 +238,31 @@ just created. Use the following email address when granting access (replace
 <project> with your Google Cloud project name):
 `grow-kintaro-read-only@$<project>.iam.gserviceaccount.com`.
 
+### Encryption
+
+When using a CI service it is helpful to keep an encrypted copy of the `auth-key.json`
+file that can be used by the CI.
+
+First, add the `auth-key.json` file to the `.gitignore` file to help prevent
+checking in the unencrypted credentials.
+
+To encrypt the credentials run this command locally, replacing the `<encryption key>`
+with your own random private encryption key (ex: `openssl rand -base64 64`):
+
+    openssl aes-256-cbc -e -in auth-key.json -out auth-key-CI -k <encryption key>
+
+The `auth-key-CI` file is the encrypted `auth-key.json` file and can be added to
+the repository.
+
+Most CI services allow you to securely provide environment variables.
+Add an environment variable named `CRED_ENC_KEY` with the value of the private
+encryption key used to create the `auth-key-CI` file.
+
+In the setup stage of your CI service the following should be added to decrypt
+the authentication file for your CI build to use:
+
+    openssl aes-256-cbc -d -in auth-key-CI -k $CRED_ENC_KEY >> auth-key.json
+
 ### Default service account on Google App Engine
 
 If you are deploying a Grow development server to Google App Engine, Grow will
