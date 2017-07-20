@@ -117,11 +117,11 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             key = '{}@'.format(key)
 
         # Handle ReferenceField as doc reference.
-        if field_data['type'] == 'ReferenceField' and isinstance(value, dict):
+        if field_data['type'] == 'ReferenceField':
             for binding in self.config.bind:
                 if binding.kintaro_collection == value['collection_id']:
-                    content_path = '{}{}.yaml'.format(
-                        binding.collection, value['document_id'])
+                    filename = '{}.yaml'.format(value['document_id'])
+                    content_path = os.path.join(binding.collection, filename)
                     value = self.pod.get_doc(content_path)
                     break
 
