@@ -1,0 +1,10 @@
+api_version: 1
+runtime: python27
+threadsafe: true
+service: kintaro-watcher
+
+handlers:
+- url: /.*
+  script: main.app
+  secure: always
+  login: admin
