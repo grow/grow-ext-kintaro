@@ -1,6 +1,9 @@
 from google.appengine.ext import vendor
 vendor.add('lib')
 
+from google.appengine.api import urlfetch
+urlfetch.set_default_fetch_deadline(60)
+
 from google.appengine.api import app_identity
 from google.appengine.ext import ndb
 from googleapiclient import discovery
@@ -48,7 +51,7 @@ class Watch(ndb.Model):
         return '<Watch {}:{}/{}>'.format(
                 self.key.id(), self.repo_id, self.project_id)
 
-    def execute(self, kintaro):
+    def execute(self, kintaro, force=False):
         try:
             project = kintaro.projects().rpcGetProject(body={
                 'project_id': self.project_id,
@@ -59,7 +62,7 @@ class Watch(ndb.Model):
         self.modified_by = project['mod_info']['updated_by']
         self.modified = datetime.datetime.fromtimestamp(
                 int(project['mod_info']['updated_on_millis']) / 1000.0)
-        if self.last_run is None or self.modified > self.last_run:
+        if force or self.last_run is None or self.modified > self.last_run:
             if self.webhook_url:
                 self.run_webhook(project)
             else:
@@ -89,18 +92,24 @@ class Watch(ndb.Model):
         return self.webhook_url.format(**kwargs)
 
 
-def process():
+def process(force=False):
     service = create_service()
     query = Watch.query()
     results = query.fetch()
     for result in results:
-        result.execute(service)
+        result.execute(service, force=force)
 
 
 class CronHandler(webapp2.RequestHandler):
 
     def get(self):
         process()
+
+
+class RunHandler(webapp2.RequestHandler):
+
+    def get(self):
+        process(force=True)
 
 
 class WatchHandler(webapp2.RequestHandler):
@@ -117,5 +126,6 @@ class WatchHandler(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([
     ('/cron', CronHandler),
+    ('/run', RunHandler),
     ('/', WatchHandler),
 ])
