@@ -9,8 +9,8 @@ Since Kintaro does not have the ability to run webhooks when content changes,
 this microservice will poll Kintaro for changes to a project, then execute a
 webhook if there were changes since it last run.
 
-By default, the polling time is about every thirty seconds, depending on how
-long webhook URLs take to execute.
+By default, the polling time is about every minute, depending on how long
+webhook URLs take to execute.
 
 ## Usage
 
@@ -41,3 +41,8 @@ Kintaro.
 ```
 https://circleci.com/api/v1/project/<username>/<project_name>/tree/<branch_name>?circle-token=<token>
 ```
+
+## TODO
+
+- Customize the HTTP request method used for webhooks
+- An actual user interface for managing webhooks
