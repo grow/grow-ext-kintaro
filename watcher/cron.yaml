@@ -1,4 +1,5 @@
 cron:
 - description: polls kintaro for changes and runs webhooks
   schedule: every 1 minutes
+  target: kintaro-watcher
   url: /cron
