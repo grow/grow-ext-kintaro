@@ -139,21 +139,11 @@ might be built by rendering a hero, a two-column section, and a body section.
 Each partial is a different unit of content (in YAML) and a corresponding
 template.
 
-You can bind a schema to a partial through various approaches. One technique
-illustrated in the example is to keep a mapping of Kintaro schema name to Grow
-partial name within a collection's `_blueprint.yaml` and then iterating over
-the fields in a document, rendering partials as found.
+One technique illustrated in the example is to use the `Partial` prefix on Kintaro 
+schema names and then iterating over the fields in a document, rendering partials 
+as found.
 
 ![image](https://user-images.githubusercontent.com/646525/27977630-72319c94-6320-11e7-8283-1b62646f696e.png)
-
-In a collection's `_blueprint.yaml`:
-
-```
-schemas_to_partials:
-  sectionHero: hero
-  sectionTwoColumn: two-column
-  sectionBody: body
-```
 
 In a template rendering a document:
 
@@ -163,7 +153,7 @@ In a template rendering a document:
   {% if not field.schema_name %}
     {% continue %}
   {% endif %}
-
+  
   {# Determine whether the field corresponds to a partial. #}
   {% set partial_filename = field.schema_name|kintaro.schema_name_to_partial %}
 
@@ -178,9 +168,6 @@ In a template rendering a document:
   {% endwith %}
 {% endfor %}
 ```
-
-As new schemas are added to Kintaro, simply add an appropriate mapping in
-`_blueprint.yaml` (or elsewhere) to determine the corresponding partial.
 
 This repository contains a complete example in:
 
