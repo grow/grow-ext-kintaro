@@ -115,6 +115,16 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             key = '${}'.format(key)
         if field_data['translatable']:
             key = '{}@'.format(key)
+
+        # Handle ReferenceField as doc reference.
+        if field_data['type'] == 'ReferenceField':
+            for binding in self.config.bind:
+                if binding.kintaro_collection == value['collection_id']:
+                    filename = '{}.yaml'.format(value['document_id'])
+                    content_path = os.path.join(binding.collection, filename)
+                    value = self.pod.get_doc(content_path)
+                    break
+
         return key, value
 
     def _get_basename_from_entry(self, entry):
@@ -154,13 +164,15 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         for document in documents:
             document_id = document['document_id']
             entry = self.download_entry(
-                    document_id, collection_id, repo_id, project_id)
+                document_id, collection_id, repo_id, project_id)
             results.append(entry)
         return results
-        # TODO: Upgrade Grow's google api python client, use it to batch requests.
+        # TODO: Upgrade Grow's google api python client, use it to batch
+        # requests.
         service = self.create_service(host=self.config.host)
         batch = service.new_batch_http_request()
         results = []
+
         def _add(entry):
             results.append(entry)
         for document in documents:
@@ -191,7 +203,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         documents = resp.get('document_list', {}).get('documents', [])
         if not self.config.use_index:
             documents_from_get = self._get_documents_from_search(
-                    repo_id, collection_id, project_id, documents)
+                repo_id, collection_id, project_id, documents)
             return documents_from_get
         # Reformat document response to include schema.
         schema = resp.get('schema', {})
@@ -280,4 +292,5 @@ class KintaroExtension(Extension):
 
     def __init__(self, environment):
         super(KintaroExtension, self).__init__(environment)
-        environment.filters['kintaro.schema_name_to_partial'] = schema_name_to_partial
+        environment.filters[
+            'kintaro.schema_name_to_partial'] = schema_name_to_partial
