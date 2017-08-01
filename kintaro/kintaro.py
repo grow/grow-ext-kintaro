@@ -113,9 +113,11 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             built_in_fields = ['title', 'order']
         if key in built_in_fields:
             key = '${}'.format(key)
-        if field_data['translatable']:
-            key = '{}@'.format(key)
+        key = self._parse_field_key(key, field_data)
+        value = self._parse_field_deep(value, field_data)
+        return key, value
 
+    def _parse_field_deep(self, value, field_data):
         # Handle ReferenceField as doc reference.
         if field_data['type'] == 'ReferenceField':
             for binding in self.config.bind:
@@ -125,7 +127,30 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                     value = self.pod.get_doc(content_path)
                     break
 
-        return key, value
+        if 'schema_fields' in field_data:
+            names_to_schema_fields = self._regroup_schema(
+                field_data['schema_fields'])
+            if isinstance(value, list):
+                for idx in range(len(value)):
+                    value[idx] = self._parse_field_value(
+                        value[idx], names_to_schema_fields)
+            else:
+                value = self._parse_field_value(value, names_to_schema_fields)
+        return value
+
+    def _parse_field_key(self, key, field_data):
+        if field_data['translatable']:
+            key = '{}@'.format(key)
+        return key
+
+    def _parse_field_value(self, value, names_to_schema_fields):
+        clean_value = {}
+        for sub_key, sub_value in value.iteritems():
+            new_key = self._parse_field_key(
+                sub_key, names_to_schema_fields[sub_key])
+            clean_value[new_key] = self._parse_field_deep(
+                sub_value, names_to_schema_fields[sub_key])
+        return clean_value
 
     def _get_basename_from_entry(self, entry):
         return '{}.yaml'.format(entry['document_id'])
