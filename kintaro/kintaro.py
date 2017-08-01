@@ -74,6 +74,16 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         host = messages.StringField(4, default=KINTARO_HOST)
         use_index = messages.BooleanField(5, default=True)
 
+    def __init__(self, *args, **kwargs):
+        super(KintaroPreprocessor, self).__init__(*args, **kwargs)
+        self._service = None
+
+    @property
+    def service(self):
+        if not self._service:
+            self._service = self.create_service(host=self.config.host)
+        return self._service
+
     def bind_collection(self, entries, collection_pod_path):
         collection = self.pod.get_collection(collection_pod_path)
         existing_pod_paths = [
@@ -214,7 +224,6 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         return results
 
     def download_entries(self, repo_id, collection_id, project_id):
-        service = self.create_service(host=self.config.host)
         body = {
             'repo_id': repo_id,
             'collection_id': collection_id,
@@ -224,7 +233,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                 'return_schema': True,
             }
         }
-        resp = service.documents().searchDocuments(body=body).execute()
+        resp = self.service.documents().searchDocuments(body=body).execute()
         documents = resp.get('document_list', {}).get('documents', [])
         if not self.config.use_index:
             documents_from_get = self._get_documents_from_search(
@@ -237,8 +246,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         return documents
 
     def download_entry(self, document_id, collection_id, repo_id, project_id):
-        service = self.create_service(host=self.config.host)
-        resp = service.documents().getDocument(
+        resp = self.service.documents().getDocument(
             document_id=document_id,
             collection_id=collection_id,
             project_id=project_id,
