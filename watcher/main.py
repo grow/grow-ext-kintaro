@@ -59,7 +59,7 @@ class Watch(ndb.Model):
         except errors.HttpError as e:
             logging.exception('Error fetching -> {}'.format(self))
             return
-        self.modified_by = project['mod_info']['updated_by']
+        self.modified_by = project['mod_info'].get('updated_by')
         self.modified = datetime.datetime.fromtimestamp(
                 int(project['mod_info']['updated_on_millis']) / 1000.0)
         if force or self.last_run is None or self.modified > self.last_run:
@@ -85,7 +85,7 @@ class Watch(ndb.Model):
                 'project_created_by': project['mod_info']['created_by'],
                 'project_id': project['project_id'],
                 'project_modified': project['mod_info']['updated_on_millis'],
-                'project_modified_by': project['mod_info']['updated_by'],
+                'project_modified_by': project['mod_info'].get('updated_by'),
                 'repo_id': project['repo_ids'][0],
                 'translations_up_to_date': project['translations_up_to_date'],
         }
