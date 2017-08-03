@@ -137,8 +137,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             for idx in range(len(value)):
                 for binding in self.config.bind:
                     if binding.kintaro_collection == value[idx]['collection_id']:
-                        filename = '{}.yaml'.format(
-                            value[idx]['document_id'])
+                        filename = '{}.yaml'.format(value[idx]['document_id'])
                         content_path = os.path.join(
                             binding.collection, filename)
                         value[idx] = self.pod.get_doc(content_path)
