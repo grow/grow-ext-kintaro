@@ -128,24 +128,29 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         return key, value
 
     def _parse_field_deep(self, value, field_data):
+        single_field = not isinstance(value, list)
+        if single_field:
+            value = [value]
+
         # Handle ReferenceField as doc reference.
         if field_data['type'] == 'ReferenceField':
-            for binding in self.config.bind:
-                if binding.kintaro_collection == value['collection_id']:
-                    filename = '{}.yaml'.format(value['document_id'])
-                    content_path = os.path.join(binding.collection, filename)
-                    value = self.pod.get_doc(content_path)
-                    break
-
-        if 'schema_fields' in field_data:
+            for idx in range(len(value)):
+                for binding in self.config.bind:
+                    if binding.kintaro_collection == value[idx]['collection_id']:
+                        filename = '{}.yaml'.format(
+                            value[idx]['document_id'])
+                        content_path = os.path.join(
+                            binding.collection, filename)
+                        value[idx] = self.pod.get_doc(content_path)
+                        break
+        elif 'schema_fields' in field_data:
             names_to_schema_fields = self._regroup_schema(
                 field_data['schema_fields'])
-            if isinstance(value, list):
-                for idx in range(len(value)):
-                    value[idx] = self._parse_field_value(
-                        value[idx], names_to_schema_fields)
-            else:
-                value = self._parse_field_value(value, names_to_schema_fields)
+            for idx in range(len(value)):
+                value[idx] = self._parse_field_value(
+                    value[idx], names_to_schema_fields)
+        if single_field:
+            value = value[0]
         return value
 
     def _parse_field_key(self, key, field_data):
