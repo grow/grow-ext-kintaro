@@ -137,7 +137,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             for idx in range(len(value)):
                 for binding in self.config.bind:
                     if binding.kintaro_collection == value[idx]['collection_id']:
-                        filename = '{}.yaml'.format(value[idx]['document_id'])
+                        filename = '{}.yaml'.format(
+                            value[idx]['document_id'])
                         content_path = os.path.join(
                             binding.collection, filename)
                         value[idx] = self.pod.get_doc(content_path)
@@ -315,12 +316,15 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             self.bind_collection(entries, collection_pod_path)
 
 
-def schema_name_to_partial(value, sep='-', directory='partials', prefix='partial'):
+def schema_name_to_partial(value, sep='-', directory='views/partials',
+                           use_sub_directory=False, prefix='partial'):
     """Parse a kintaro schema name to determine if it is a partial."""
     if value.lower().startswith(prefix):
         basename = value[len(prefix):]
         basename = PARTIAL_CONVERSION.sub(r'{}\1'.format(sep), basename)[1:]
-        return '/views/{}/{}.html'.format(directory, basename.lower())
+        if use_sub_directory:
+            directory = '{}/{}'.format(directory, basename.lower())
+        return '/{}/{}.html'.format(directory, basename.lower())
     return None
 
 
