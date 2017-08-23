@@ -135,6 +135,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         # Handle ReferenceField as doc reference.
         if field_data['type'] == 'ReferenceField':
             for idx in range(len(value)):
+                if not value[idx]:
+                    continue
                 for binding in self.config.bind:
                     if binding.kintaro_collection == value[idx]['collection_id']:
                         filename = '{}.yaml'.format(
