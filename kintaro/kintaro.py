@@ -114,7 +114,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             names_to_fields[field['name']] = field
         return names_to_fields
 
-    def _parse_field(self, key, value, field_data):
+    def _parse_field(self, key, value, field_data, locale=None):
         # Convert Kintaro keys to Grow built-ins.
         if hasattr(documents, 'BUILT_IN_FIELDS'):
             built_in_fields = documents.BUILT_IN_FIELDS
@@ -124,10 +124,10 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         if key in built_in_fields:
             key = '${}'.format(key)
         key = self._parse_field_key(key, field_data)
-        value = self._parse_field_deep(value, field_data)
+        value = self._parse_field_deep(value, field_data, locale=locale)
         return key, value
 
-    def _parse_field_deep(self, value, field_data):
+    def _parse_field_deep(self, value, field_data, locale=None):
         single_field = not isinstance(value, list)
         if single_field:
             value = [value]
@@ -143,14 +143,14 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                             value[idx]['document_id'])
                         content_path = os.path.join(
                             binding.collection, filename)
-                        value[idx] = self.pod.get_doc(content_path)
+                        value[idx] = self.pod.get_doc(content_path, locale=locale)
                         break
         elif 'schema_fields' in field_data:
             names_to_schema_fields = self._regroup_schema(
                 field_data['schema_fields'])
             for idx in range(len(value)):
                 value[idx] = self._parse_field_value(
-                    value[idx], names_to_schema_fields)
+                    value[idx], names_to_schema_fields, locale=locale)
         if single_field:
             value = value[0]
         return value
@@ -160,13 +160,13 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             key = '{}@'.format(key)
         return key
 
-    def _parse_field_value(self, value, names_to_schema_fields):
+    def _parse_field_value(self, value, names_to_schema_fields, locale=None):
         clean_value = {}
         for sub_key, sub_value in value.iteritems():
             new_key = self._parse_field_key(
                 sub_key, names_to_schema_fields[sub_key])
             clean_value[new_key] = self._parse_field_deep(
-                sub_value, names_to_schema_fields[sub_key])
+                sub_value, names_to_schema_fields[sub_key], locale=locale)
         return clean_value
 
     def _get_basename_from_entry(self, entry):
@@ -190,7 +190,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         # Overwrite with data from CMS.
         for name, value in fields.iteritems():
             field_data = names_to_schema_fields[name]
-            key, value = self._parse_field(name, value, field_data)
+            key, value = self._parse_field(name, value, field_data, locale=doc.locale)
             clean_fields[key] = value
         # Populate $meta.
         if schema:
