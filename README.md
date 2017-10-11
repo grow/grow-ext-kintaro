@@ -131,6 +131,12 @@ deployments:
       [...]
 ```
 
+### Environment tagging
+
+When dealing with content from Kintaro you may want to be able to have content that is available in staging or dev, but not yet available in prod. In Grow you can tag a field to have a different value based on the environment (ex: `path@env.prod: ''` makes the path blank in prod and keeps it from rendering.)
+
+Since Kintaro does not allow for symbols in the field names, the Kintaro Grow extension replaces field names that end with `_env_<env name>` and converts it to a normal tag. For example: `path_env_prod` becomes `path@env.prod` during the import process if there is a deployment configuration with the `prod` name.
+
 ### Partials
 
 In Grow, **partials** are a way to build pages by including a series of modules
@@ -139,8 +145,8 @@ might be built by rendering a hero, a two-column section, and a body section.
 Each partial is a different unit of content (in YAML) and a corresponding
 template.
 
-One technique illustrated in the example is to use the `Partial` prefix on Kintaro 
-schema names and then iterating over the fields in a document, rendering partials 
+One technique illustrated in the example is to use the `Partial` prefix on Kintaro
+schema names and then iterating over the fields in a document, rendering partials
 as found.
 
 ![image](https://user-images.githubusercontent.com/646525/27977630-72319c94-6320-11e7-8283-1b62646f696e.png)
@@ -153,7 +159,7 @@ In a template rendering a document:
   {% if not field.schema_name %}
     {% continue %}
   {% endif %}
-  
+
   {# Determine whether the field corresponds to a partial. #}
   {% set partial_filename = field.schema_name|kintaro.schema_name_to_partial %}
 
