@@ -77,6 +77,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
     def __init__(self, *args, **kwargs):
         super(KintaroPreprocessor, self).__init__(*args, **kwargs)
         self._service = None
+        self._env_regex = None
+        self._env_regex_replace = r'@env.\1'
 
     @property
     def service(self):
@@ -143,14 +145,16 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                             value[idx]['document_id'])
                         content_path = os.path.join(
                             binding.collection, filename)
-                        value[idx] = self.pod.get_doc(content_path, locale=locale)
+                        value[idx] = self.pod.get_doc(
+                            content_path, locale=locale)
                         break
         elif 'schema_fields' in field_data:
             names_to_schema_fields = self._regroup_schema(
                 field_data['schema_fields'])
             for idx in range(len(value)):
                 value[idx] = self._parse_field_value(
-                    value[idx], names_to_schema_fields, locale=locale)
+                    value[idx], names_to_schema_fields,
+                    locale=locale)
         if single_field:
             value = value[0]
         return value
@@ -158,6 +162,9 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
     def _parse_field_key(self, key, field_data):
         if field_data['translatable']:
             key = '{}@'.format(key)
+        # Handle environment tagging.
+        if self._env_regex:
+            key = re.sub(self._env_regex, self._env_regex_replace, key)
         return key
 
     def _parse_field_value(self, value, names_to_schema_fields, locale=None):
@@ -166,13 +173,18 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             new_key = self._parse_field_key(
                 sub_key, names_to_schema_fields[sub_key])
             clean_value[new_key] = self._parse_field_deep(
-                sub_value, names_to_schema_fields[sub_key], locale=locale)
+                sub_value, names_to_schema_fields[sub_key],
+                locale=locale)
         return clean_value
 
     def _get_basename_from_entry(self, entry):
         return '{}.yaml'.format(entry['document_id'])
 
     def _parse_entry(self, doc, entry):
+        deployments = doc.pod.yaml.get('deployments', {}).keys()
+        if deployments and not self._env_regex:
+            self._env_regex = re.compile(
+                r'_env_({})$'.format('|'.join(deployments)))
         basename = self._get_basename_from_entry(entry)
         schema = entry.get('schema', {})
         schema_fields = schema.get('schema_fields', [])
@@ -190,7 +202,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         # Overwrite with data from CMS.
         for name, value in fields.iteritems():
             field_data = names_to_schema_fields[name]
-            key, value = self._parse_field(name, value, field_data, locale=doc.locale)
+            key, value = self._parse_field(
+                name, value, field_data, locale=doc.locale)
             clean_fields[key] = value
         # Populate $meta.
         if schema:
