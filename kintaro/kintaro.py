@@ -163,7 +163,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         if field_data['translatable']:
             key = '{}@'.format(key)
         # Handle environment tagging.
-        key = re.sub(self._env_regex, self._env_regex_replace, key)
+        if self._env_regex:
+            key = re.sub(self._env_regex, self._env_regex_replace, key)
         return key
 
     def _parse_field_value(self, value, names_to_schema_fields, locale=None):
@@ -181,7 +182,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
     def _parse_entry(self, doc, entry):
         deployments = doc.pod.yaml.get('deployments', {}).keys()
-        if not self._env_regex:
+        if deployments and not self._env_regex:
             self._env_regex = re.compile(
                 r'_env_({})$'.format('|'.join(deployments)))
         basename = self._get_basename_from_entry(entry)
