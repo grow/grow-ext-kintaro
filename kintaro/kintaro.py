@@ -78,6 +78,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         super(KintaroPreprocessor, self).__init__(*args, **kwargs)
         self._service = None
         self._env_regex = None
+        self._env_regex_match = None
         self._env_regex_replace = r'@env.\1'
 
     @property
@@ -110,6 +111,12 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             self.pod.delete_file(pod_path)
             self.pod.logger.info('Deleted -> {}'.format(pod_path))
 
+    def _fix_path_none(self, key, value):
+        if self._env_regex_match.search(key):
+            if key.startswith(('path', '$path')) and value is None:
+                return ''
+        return value
+
     def _regroup_schema(self, schema):
         names_to_fields = {}
         for field in schema:
@@ -126,10 +133,11 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         if key in built_in_fields:
             key = '${}'.format(key)
         key = self._parse_field_key(key, field_data)
-        value = self._parse_field_deep(value, field_data, locale=locale)
+        value = self._parse_field_deep(key, value, field_data, locale=locale)
+        value = self._fix_path_none(key, value)
         return key, value
 
-    def _parse_field_deep(self, value, field_data, locale=None):
+    def _parse_field_deep(self, key, value, field_data, locale=None):
         single_field = not isinstance(value, list)
         if single_field:
             value = [value]
@@ -157,6 +165,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                     locale=locale)
         if single_field:
             value = value[0]
+        value = self._fix_path_none(key, value)
+
         return value
 
     def _parse_field_key(self, key, field_data):
@@ -173,7 +183,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             new_key = self._parse_field_key(
                 sub_key, names_to_schema_fields[sub_key])
             clean_value[new_key] = self._parse_field_deep(
-                sub_value, names_to_schema_fields[sub_key],
+                new_key, sub_value, names_to_schema_fields[sub_key],
                 locale=locale)
         return clean_value
 
@@ -185,6 +195,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         if deployments and not self._env_regex:
             self._env_regex = re.compile(
                 r'_env_({})$'.format('|'.join(deployments)))
+            self._env_regex_match = re.compile(
+                r'@env.({})$'.format('|'.join(deployments)))
         basename = self._get_basename_from_entry(entry)
         schema = entry.get('schema', {})
         schema_fields = schema.get('schema_fields', [])
