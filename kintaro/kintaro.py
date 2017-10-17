@@ -112,7 +112,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             self.pod.logger.info('Deleted -> {}'.format(pod_path))
 
     def _fix_path_none(self, key, value):
-        if self._env_regex_match.search(key):
+        if self._env_regex_match and self._env_regex_match.search(key):
             if key.startswith(('path', '$path')) and value is None:
                 return ''
         return value
