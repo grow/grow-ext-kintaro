@@ -89,6 +89,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
     def bind_collection(self, entries, collection_pod_path):
         collection = self.pod.get_collection(collection_pod_path)
+        if not collection.exists:
+            self.pod.create_collection(collection_pod_path, {})
         existing_pod_paths = [
             doc.pod_path
             for doc in collection.docs(recursive=False, inject=False)]
