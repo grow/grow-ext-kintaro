@@ -132,9 +132,17 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         else:
             # Support older versions of grow.
             built_in_fields = ['title', 'order']
+
         if key in built_in_fields:
             key = '${}'.format(key)
+
         key = self._parse_field_key(key, field_data)
+
+        # Need to make sure that environment tagged built ins are prefixed.
+        tagged_regex = re.compile(r'^({})@'.format('|'.join(built_in_fields)))
+        if tagged_regex.search(key):
+            key = '${}'.format(key)
+
         value = self._parse_field_deep(key, value, field_data, locale=locale)
         value = self._fix_path_none(key, value)
         return key, value
