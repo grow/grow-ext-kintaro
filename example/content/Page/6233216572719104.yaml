@@ -231,16 +231,12 @@ $meta:
       translation_context: ''
       type: NestedField
       validation_rule: ''
-$title@: Homepage
-description@: Welcome to the homepage.
+$title@: Test
+description@: null
 sectionBody:
-  body@: Body text.
+  body@: null
 sectionHero:
-  body@: Lorem ipsum text for the hero section body.
-  title@: Hero section title.
+  body@: null
+  title@: null
 sectionTwoColumn:
-  column:
-  - body@: Column 1 body.
-    title@: Column 1 title.
-  - body@: Column 2 body.
-    title@: Column 2 title.
+  column: []

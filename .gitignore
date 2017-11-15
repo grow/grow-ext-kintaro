@@ -1,4 +1,4 @@
 **.mo
-example/.podcache
+example/.depcache.json
 example/build/
 example/extensions/
