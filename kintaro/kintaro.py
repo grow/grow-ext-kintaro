@@ -37,9 +37,20 @@ OAUTH_SCOPES = ('https://www.googleapis.com/auth/userinfo.email',
                 'https://www.googleapis.com/auth/kintaro')
 
 
+class Error(Exception):
+    """General kintaro error."""
+    pass
+
+
+class UnknownReferenceError(Error):
+    """Error finding the referenced kintaro document."""
+    pass
+
+
 class BindingMessage(messages.Message):
     collection = messages.StringField(1)
     kintaro_collection = messages.StringField(2)
+    key = messages.StringField(3)
 
 
 class _GoogleServicePreprocessor(grow.Preprocessor):
@@ -80,6 +91,9 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         self._env_regex = None
         self._env_regex_match = None
         self._env_regex_replace = r'@env.\1'
+        self._deferred = []
+        self._removed = set()
+        self._id_map = {}
 
     @property
     def service(self):
@@ -87,7 +101,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             self._service = self.create_service(host=self.config.host)
         return self._service
 
-    def bind_collection(self, entries, collection_pod_path):
+    def bind_collection(self, entries, collection_pod_path, key=None):
         collection = self.pod.get_collection(collection_pod_path)
         if not collection.exists:
             self.pod.create_collection(collection_pod_path, {})
@@ -95,23 +109,20 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             doc.pod_path
             for doc in collection.docs(recursive=False, inject=False)]
         new_pod_paths = []
-        for i, entry in enumerate(entries):
-            # TODO: Ensure `create_doc` doesn't die if the file doesn't exist.
-            basename = self._get_basename_from_entry(entry)
-            path = os.path.join(collection.pod_path, basename)
-            if not self.pod.file_exists(path):
-                self.pod.write_yaml(path, {})
-            doc_pod_path = os.path.join(collection.pod_path, basename)
-            doc = collection.get_doc(doc_pod_path)
-            fields, unused_body, basename = self._parse_entry(doc, entry)
-            doc = collection.create_doc(basename, fields=fields, body='')
-            new_pod_paths.append(doc.pod_path)
-            self.pod.logger.info('Saved -> {}'.format(doc.pod_path))
+        for _, entry in enumerate(entries):
+            try:
+                fields, unused_body, basename = self._parse_entry(
+                    collection.pod_path, entry, key=key)
+                doc = collection.create_doc(basename, fields=fields, body='')
+                new_pod_paths.append(doc.pod_path)
+                self.pod.logger.info('Saved -> {}'.format(doc.pod_path))
+            except UnknownReferenceError as err:
+                self._deferred.append(
+                    (collection, collection.pod_path, entry, key))
+                self.pod.logger.info('Deferred -> {}'.format(err))
 
         pod_paths_to_delete = set(existing_pod_paths) - set(new_pod_paths)
-        for pod_path in pod_paths_to_delete:
-            self.pod.delete_file(pod_path)
-            self.pod.logger.info('Deleted -> {}'.format(pod_path))
+        self._removed = self._removed | pod_paths_to_delete
 
     def _fix_path_none(self, key, value):
         if self._env_regex_match and self._env_regex_match.search(key):
@@ -159,8 +170,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                     continue
                 for binding in self.config.bind:
                     if binding.kintaro_collection == value[idx]['collection_id']:
-                        filename = '{}.yaml'.format(
-                            value[idx]['document_id'])
+                        filename = self._resolve_document_filename(
+                            value[idx], key=binding.key)
                         content_path = os.path.join(
                             binding.collection, filename)
                         value[idx] = self.pod.get_doc(
@@ -197,35 +208,47 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                 locale=locale)
         return clean_value
 
-    def _get_basename_from_entry(self, entry):
-        return '{}.yaml'.format(entry['document_id'])
+    def _get_basename_from_entry(self, entry, key=None):
+        doc_id = entry['document_id']
+        file_name = doc_id
+        if key is not None:
+            file_name = entry[key]
+            self._id_map[doc_id] = file_name
+        return '{}.yaml'.format(file_name)
 
-    def _parse_entry(self, doc, entry):
-        deployments = doc.pod.yaml.get('deployments', {}).keys()
+    def _parse_entry(self, collection_path, entry, key=None, locale=None):
+        deployments = self.pod.yaml.get('deployments', {}).keys()
         if deployments and not self._env_regex:
             self._env_regex = re.compile(
                 r'_env_({})$'.format('|'.join(deployments)))
             self._env_regex_match = re.compile(
                 r'@env.({})$'.format('|'.join(deployments)))
-        basename = self._get_basename_from_entry(entry)
         schema = entry.get('schema', {})
         schema_fields = schema.get('schema_fields', [])
         names_to_schema_fields = self._regroup_schema(schema_fields)
         fields = entry.get('content_json', '{}')
         fields = json.loads(fields)
+        fields['document_id'] = entry['document_id']
+        # Use the fields to get access to all content.
+        basename = self._get_basename_from_entry(fields, key=key)
         clean_fields = {}
         # Preserve existing built-in fields prefixed with $.
+        path = os.path.join(collection_path, basename)
+        doc = self.pod.get_doc(path)
         front_matter_data = doc.format.front_matter.data
         if front_matter_data:
-            for key, value in front_matter_data.iteritems():
-                if not key.startswith('$'):
+            for field_key, value in front_matter_data.iteritems():
+                if not field_key.startswith('$'):
                     continue
-                clean_fields[key] = value
+                clean_fields[field_key] = value
         # Overwrite with data from CMS.
         for name, value in fields.iteritems():
+            if name == 'document_id':
+                clean_fields[name] = value
+                continue
             field_data = names_to_schema_fields[name]
             key, value = self._parse_field(
-                name, value, field_data, locale=doc.locale)
+                name, value, field_data, locale=locale)
             clean_fields[key] = value
         # Populate $meta.
         if schema:
@@ -264,6 +287,15 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             batch.add(req, callback=_add)
         batch.execute()
         return results
+
+    def _resolve_document_filename(self, entry, key=None):
+        """Try to match a document to the correct file name."""
+        doc_id = str(entry['document_id']).decode('utf-8')
+        if key is None:
+            return '{}.yaml'.format(doc_id)
+        if doc_id not in self._id_map:
+            raise UnknownReferenceError('{} is an unknown document reference.'.format(doc_id))
+        return '{}.yaml'.format(self._id_map[doc_id])
 
     def download_entries(self, repo_id, collection_id, project_id):
         body = {
@@ -329,28 +361,45 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
     def inject(self, doc=None, collection=None):
         if doc:
-            document_id = doc.base
-            doc_pod_path = self._normalize(doc.collection.pod_path)
+            document_id = doc.fields['document_id']
+            collection_path = self._normalize(doc.collection.pod_path)
             for binding in self.config.bind:
-                if self._normalize(binding.collection) == doc_pod_path:
+                if self._normalize(binding.collection) == collection_path:
                     entry = self.download_entry(
                         document_id=document_id,
                         collection_id=binding.kintaro_collection,
                         repo_id=self.config.repo,
                         project_id=self.config.project)
-                    fields, _, _ = self._parse_entry(doc, entry)
+                    fields, _, _ = self._parse_entry(
+                        collection_path, entry, key=binding.key, locale=doc.locale)
                     doc.inject(fields, body='')
                     return doc
 
+    def process_deferred(self):
+        new_pod_paths = []
+        for collection, collection_path, entry, key in self._deferred:
+            fields, unused_body, basename = self._parse_entry(
+                collection_path, entry, key=key)
+            doc = collection.create_doc(basename, fields=fields, body='')
+            new_pod_paths.append(doc.pod_path)
+            self.pod.logger.info('Saved -> {}'.format(doc.pod_path))
+        self._removed = self._removed - set(new_pod_paths)
+
     def run(self, *args, **kwargs):
         for binding in self.config.bind:
-            collection_pod_path = binding.collection
-            kintaro_collection = binding.kintaro_collection
             entries = self.download_entries(
                 repo_id=self.config.repo,
-                collection_id=kintaro_collection,
+                collection_id=binding.kintaro_collection,
                 project_id=self.config.project)
-            self.bind_collection(entries, collection_pod_path)
+            self.bind_collection(entries, binding.collection, key=binding.key)
+
+        # Handle deferred.
+        self.process_deferred()
+
+        # Handle deleted.
+        for pod_path in self._removed:
+            self.pod.delete_file(pod_path)
+            self.pod.logger.info('Deleted -> {}'.format(pod_path))
 
 
 def schema_name_to_partial(value, sep='-', directory='views/partials',
