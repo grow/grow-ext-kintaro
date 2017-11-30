@@ -154,7 +154,8 @@ as found.
 In a template rendering a document:
 
 ```
-{% for field in doc.fields.get('$meta').schema.schema_fields %}
+{% set schema = doc.pod.read_yaml(doc.collection.pod_path ~ '/_schema.yaml') %}
+{% for field in schema.schema_fields %}
   {# If the schema name is not set, skip. #}
   {% if not field.schema_name %}
     {% continue %}
