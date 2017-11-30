@@ -109,13 +109,21 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             doc.pod_path
             for doc in collection.docs(recursive=False, inject=False)]
         new_pod_paths = []
+        saved_metadata = False
         for _, entry in enumerate(entries):
             try:
-                fields, unused_body, basename = self._parse_entry(
+                fields, unused_body, basename, schema = self._parse_entry(
                     collection.pod_path, entry, key=key)
                 doc = collection.create_doc(basename, fields=fields, body='')
                 new_pod_paths.append(doc.pod_path)
                 self.pod.logger.info('Saved -> {}'.format(doc.pod_path))
+
+                if not saved_metadata:
+                    meta_filename = os.path.join(
+                    collection.pod_path, '_schema.yaml')
+                    self.pod.write_yaml(meta_filename, schema)
+                    self.pod.logger.info('Schema -> {}'.format(meta_filename))
+                    saved_metadata = True
             except UnknownReferenceError as err:
                 self._deferred.append(
                     (collection, collection.pod_path, entry, key))
@@ -254,10 +262,10 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         if schema:
             # Strip modified info from schema.
             schema.pop('mod_info', None)
-            clean_fields['$meta'] = {}
-            clean_fields['$meta']['schema'] = schema
+        # Keep metadata out of the docs.
+        clean_fields.pop('$meta', None)
         body = ''
-        return clean_fields, body, basename
+        return clean_fields, body, basename, schema
 
     def _get_documents_from_search(self, repo_id, collection_id, project_id, documents):
         results = []
@@ -294,7 +302,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         if key is None:
             return '{}.yaml'.format(doc_id)
         if doc_id not in self._id_map:
-            raise UnknownReferenceError('{} is an unknown document reference.'.format(doc_id))
+            raise UnknownReferenceError(
+                '{} is an unknown document reference.'.format(doc_id))
         return '{}.yaml'.format(self._id_map[doc_id])
 
     def download_entries(self, repo_id, collection_id, project_id):
@@ -370,7 +379,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                         collection_id=binding.kintaro_collection,
                         repo_id=self.config.repo,
                         project_id=self.config.project)
-                    fields, _, _ = self._parse_entry(
+                    fields, _, _, _ = self._parse_entry(
                         collection_path, entry, key=binding.key, locale=doc.locale)
                     doc.inject(fields, body='')
                     return doc
@@ -378,7 +387,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
     def process_deferred(self):
         new_pod_paths = []
         for collection, collection_path, entry, key in self._deferred:
-            fields, unused_body, basename = self._parse_entry(
+            fields, unused_body, basename, _ = self._parse_entry(
                 collection_path, entry, key=key)
             doc = collection.create_doc(basename, fields=fields, body='')
             new_pod_paths.append(doc.pod_path)
