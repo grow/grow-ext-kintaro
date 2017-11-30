@@ -111,19 +111,19 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         new_pod_paths = []
         saved_metadata = False
         for _, entry in enumerate(entries):
-            if not saved_metadata:
-                meta_filename = os.path.join(
-                collection.pod_path, '_schema.yaml')
-                self.pod.write_yaml(meta_filename, schema)
-                self.pod.logger.info('Schema -> {}'.format(meta_filename))
-                saved_metadata = True
-
             try:
                 fields, unused_body, basename, schema = self._parse_entry(
                     collection.pod_path, entry, key=key)
                 doc = collection.create_doc(basename, fields=fields, body='')
                 new_pod_paths.append(doc.pod_path)
                 self.pod.logger.info('Saved -> {}'.format(doc.pod_path))
+
+                if not saved_metadata:
+                    meta_filename = os.path.join(
+                    collection.pod_path, '_schema.yaml')
+                    self.pod.write_yaml(meta_filename, schema)
+                    self.pod.logger.info('Schema -> {}'.format(meta_filename))
+                    saved_metadata = True
             except UnknownReferenceError as err:
                 self._deferred.append(
                     (collection, collection.pod_path, entry, key))
