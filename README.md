@@ -154,8 +154,7 @@ as found.
 In a template rendering a document:
 
 ```
-{% set schema = doc.pod.read_yaml(doc.collection.pod_path ~ '/_schema.yaml') %}
-{% for field in schema.schema_fields %}
+{% for field in doc|kintaro.doc_to_schema_fields %}
   {# If the schema name is not set, skip. #}
   {% if not field.schema_name %}
     {% continue %}
