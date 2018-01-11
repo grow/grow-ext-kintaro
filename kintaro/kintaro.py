@@ -411,14 +411,20 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             self.pod.logger.info('Deleted -> {}'.format(pod_path))
 
 
+def doc_to_schema_fields(doc, schema_file_name='_schema.yaml'):
+    """Parse a doc to retrieve the schema file."""
+    return doc.pod.read_yaml(
+        '{}/{}'.format(doc.collection.pod_path, schema_file_name))
+
+
 def schema_name_to_partial(value, sep='-', directory='views/partials',
                            use_sub_directory=False, prefix='partial'):
     """Parse a kintaro schema name to determine if it is a partial."""
     if value.lower().startswith(prefix):
-        basename = value[len(prefix):]
-        basename = PARTIAL_CONVERSION.sub(r'{}\1'.format(sep), basename)[1:]
+        basename=value[len(prefix):]
+        basename=PARTIAL_CONVERSION.sub(r'{}\1'.format(sep), basename)[1:]
         if use_sub_directory:
-            directory = '{}/{}'.format(directory, basename.lower())
+            directory='{}/{}'.format(directory, basename.lower())
         return '/{}/{}.html'.format(directory, basename.lower())
     return None
 
@@ -429,4 +435,6 @@ class KintaroExtension(Extension):
     def __init__(self, environment):
         super(KintaroExtension, self).__init__(environment)
         environment.filters[
-            'kintaro.schema_name_to_partial'] = schema_name_to_partial
+            'kintaro.schema_name_to_partial']=schema_name_to_partial
+        environment.filters[
+            'kintaro.doc_to_schema_fields']=doc_to_schema_fields
