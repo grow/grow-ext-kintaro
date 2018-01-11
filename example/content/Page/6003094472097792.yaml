@@ -1,0 +1,242 @@
+$meta:
+  schema:
+    db_id: _4e6634ab2e7545c3b1b359ed5c1d286f_
+    name: Page
+    repo_id: grow-base-kintaro
+    schema_fields:
+    - can_be_locale_varied: true
+      can_be_required: true
+      can_be_translated: true
+      can_index: true
+      can_index_repeated: true
+      description: ''
+      displayed: true
+      indexed: true
+      label: true
+      locale_varied: false
+      name: title
+      path_info:
+        field_type: TRANSLATABLE
+        path: title
+      repeated: false
+      required: false
+      translatable: true
+      translation_context: ''
+      type: StringField
+    - can_be_locale_varied: true
+      can_be_required: true
+      can_be_translated: true
+      can_index: true
+      can_index_repeated: true
+      description: ''
+      displayed: false
+      indexed: true
+      label: false
+      locale_varied: false
+      name: description
+      path_info:
+        field_type: TRANSLATABLE
+        path: description
+      repeated: false
+      required: false
+      translatable: true
+      translation_context: ''
+      type: StringField
+    - can_be_locale_varied: true
+      can_be_required: true
+      can_be_translated: false
+      can_index: false
+      can_index_repeated: false
+      description: ''
+      displayed: false
+      indexed: false
+      label: false
+      locale_varied: false
+      name: sectionHero
+      path_info:
+        field_type: UNLOCALIZED
+        path: sectionHero
+      repeated: false
+      repo_id: grow-base-kintaro
+      required: false
+      schema_fields:
+      - can_be_locale_varied: true
+        can_be_required: true
+        can_be_translated: true
+        can_index: true
+        can_index_repeated: true
+        description: ''
+        displayed: false
+        indexed: true
+        label: false
+        locale_varied: false
+        name: title
+        path_info:
+          field_type: TRANSLATABLE
+          path: sectionHero__title
+        repeated: false
+        required: false
+        translatable: true
+        translation_context: ''
+        type: StringField
+      - can_be_locale_varied: true
+        can_be_required: true
+        can_be_translated: true
+        can_index: true
+        can_index_repeated: true
+        description: ''
+        displayed: false
+        indexed: true
+        label: false
+        locale_varied: false
+        name: body
+        path_info:
+          field_type: TRANSLATABLE
+          path: sectionHero__body
+        repeated: false
+        required: false
+        translatable: true
+        translation_context: ''
+        type: StringField
+      schema_name: PartialHero
+      translatable: false
+      translation_context: ''
+      type: NestedField
+      validation_rule: ''
+    - can_be_locale_varied: true
+      can_be_required: true
+      can_be_translated: false
+      can_index: false
+      can_index_repeated: false
+      description: ''
+      displayed: false
+      indexed: false
+      label: false
+      locale_varied: false
+      name: sectionTwoColumn
+      path_info:
+        field_type: UNLOCALIZED
+        path: sectionTwoColumn
+      repeated: false
+      repo_id: grow-base-kintaro
+      required: false
+      schema_fields:
+      - can_be_locale_varied: true
+        can_be_required: true
+        can_be_translated: false
+        can_index: false
+        can_index_repeated: false
+        description: ''
+        displayed: false
+        indexed: false
+        label: false
+        locale_varied: false
+        name: column
+        path_info:
+          field_type: UNLOCALIZED
+          path: sectionTwoColumn__column
+        repeated: true
+        repo_id: grow-base-kintaro
+        required: false
+        schema_fields:
+        - can_be_locale_varied: true
+          can_be_required: true
+          can_be_translated: true
+          can_index: true
+          can_index_repeated: true
+          description: ''
+          displayed: false
+          indexed: true
+          label: false
+          locale_varied: false
+          name: title
+          path_info:
+            field_type: TRANSLATABLE
+            path: sectionTwoColumn__column__title
+          repeated: false
+          required: false
+          translatable: true
+          translation_context: ''
+          type: StringField
+        - can_be_locale_varied: true
+          can_be_required: true
+          can_be_translated: true
+          can_index: true
+          can_index_repeated: true
+          description: ''
+          displayed: false
+          indexed: true
+          label: false
+          locale_varied: false
+          name: body
+          path_info:
+            field_type: TRANSLATABLE
+            path: sectionTwoColumn__column__body
+          repeated: false
+          required: false
+          translatable: true
+          translation_context: ''
+          type: TextField
+          validation_rule: ''
+        schema_name: Column
+        translatable: false
+        translation_context: ''
+        type: NestedField
+        validation_rule: ''
+      schema_name: PartialTwoColumn
+      translatable: false
+      translation_context: ''
+      type: NestedField
+      validation_rule: ''
+    - can_be_locale_varied: true
+      can_be_required: true
+      can_be_translated: false
+      can_index: false
+      can_index_repeated: false
+      description: ''
+      displayed: false
+      indexed: false
+      label: false
+      locale_varied: false
+      name: sectionBody
+      path_info:
+        field_type: UNLOCALIZED
+        path: sectionBody
+      repeated: false
+      repo_id: grow-base-kintaro
+      required: false
+      schema_fields:
+      - can_be_locale_varied: true
+        can_be_required: true
+        can_be_translated: true
+        can_index: true
+        can_index_repeated: true
+        description: ''
+        displayed: false
+        indexed: true
+        label: false
+        locale_varied: false
+        name: body
+        path_info:
+          field_type: TRANSLATABLE
+          path: sectionBody__body
+        repeated: false
+        required: false
+        translatable: true
+        translation_context: ''
+        type: TextField
+        validation_rule: ''
+      schema_name: PartialBody
+      translatable: false
+      translation_context: ''
+      type: NestedField
+      validation_rule: ''
+$title@: Testing
+description@: Testing desc
+sectionBody:
+  body@: null
+sectionHero:
+  body@: null
+  title@: null
+sectionTwoColumn:
+  column: []
