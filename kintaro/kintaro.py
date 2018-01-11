@@ -11,7 +11,7 @@ from googleapiclient import discovery
 from googleapiclient import errors
 from grow.common import oauth
 from grow.common import utils
-from grow.pods import documents
+from grow.documents import document as grow_document
 from jinja2.ext import Extension
 from protorpc import messages
 
@@ -146,8 +146,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
     def _parse_field(self, key, value, field_data, locale=None):
         # Convert Kintaro keys to Grow built-ins.
-        if hasattr(documents, 'BUILT_IN_FIELDS'):
-            built_in_fields = documents.BUILT_IN_FIELDS
+        if hasattr(grow_document, 'BUILT_IN_FIELDS'):
+            built_in_fields = grow_document.BUILT_IN_FIELDS
         else:
             # Support older versions of grow.
             built_in_fields = ['title', 'order']
