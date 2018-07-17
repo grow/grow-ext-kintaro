@@ -4,14 +4,74 @@ extensions:
   preprocessors:
   - extensions.kintaro.KintaroPreprocessor
 
-preprocessors:
-- kind: kintaro
-  autorun: true
-  inject: true
+localization:
+  default_locale: en_US
+  extract:
+    localized: true
+  locales:
+    - en_CA
+    - en_US
+    - es_419
+    - fr_CA
+
+localized_kintaro_preprocess: &localized_kintaro_preprocess
+  kind: kintaro
+
+  autorun: false
+  inject: false
+
   repo: grow-base-kintaro
-  project: grow-base-kintaro
+  project: grow-base-kintaro-localized
+  project@env.webreview: ~
+  project@env.google3: ~
+  locale_aliases:
+    - grow_locale: es_419
+      kintaro_locale: es-419_ALL
+
+preprocessors:
+
+- <<: *localized_kintaro_preprocess
+  name: kintaro-no-key
   bind:
-  - collection: /content/Product
-    kintaro_collection: Product
-  - collection: /content/Page
-    kintaro_collection: Page
+  - collection: /content/kintaro-no-key/PartialPage/
+    kintaro_collection: PartialPage
+  - collection: /content/kintaro-no-key/CollectionA/
+    kintaro_collection: CollectionA
+  - collection: /content/kintaro-no-key/CollectionB/
+    kintaro_collection: CollectionB
+
+- <<: *localized_kintaro_preprocess
+  name: kintaro-plain-key
+  bind:
+  - collection: /content/kintaro-plain-key/PartialPage/
+    kintaro_collection: PartialPage
+  - collection: /content/kintaro-plain-key/CollectionA/
+    kintaro_collection: CollectionA
+    key: no_locale_key_field
+  - collection: /content/kintaro-plain-key/CollectionB/
+    kintaro_collection: CollectionB
+    key: no_locale_key_field
+
+- <<: *localized_kintaro_preprocess
+  name: kintaro-translatable-key
+  bind:
+  - collection: /content/kintaro-translatable-key/PartialPage/
+    kintaro_collection: PartialPage
+  - collection: /content/kintaro-translatable-key/CollectionA/
+    kintaro_collection: CollectionA
+    key: translatable_key_field
+  - collection: /content/kintaro-translatable-key/CollectionB/
+    kintaro_collection: CollectionB
+    key: translatable_key_field
+
+- <<: *localized_kintaro_preprocess
+  name: kintaro-locale-varied-key
+  bind:
+  - collection: /content/kintaro-locale-varied-key/PartialPage/
+    kintaro_collection: PartialPage
+  - collection: /content/kintaro-locale-varied-key/CollectionA/
+    kintaro_collection: CollectionA
+    key: locale_varied_key_field
+  - collection: /content/kintaro-locale-varied-key/CollectionB/
+    kintaro_collection: CollectionB
+    key: locale_varied_key_field

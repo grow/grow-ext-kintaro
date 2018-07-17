@@ -1,0 +1,26 @@
+{% macro render_partials(doc) %}
+  {% for field in doc|kintaro.doc_to_schema_fields %}
+    {# If the schema name is not set, skip. #}
+    {% if field.type == 'ReferenceField' %}
+      {% set schema = doc.fields.get(field.name)|kintaro.doc_to_schema %}
+      {% set schema_name = schema.name %}
+    {% elif field.schema_name %}
+      {% set schema_name = field.schema_name %}
+    {% else %}
+      {% continue %}
+    {% endif %}
+
+    {# Determine whether the field corresponds to a partial. #}
+    {% set partial_filename = schema_name|kintaro.schema_name_to_partial %}
+
+    {# If the schema name is not mapped to a partial, skip. #}
+    {% if not partial_filename %}
+      {% continue %}
+    {% endif %}
+
+    {# Render the partial with the field values in {{partial}}. #}
+    {% with partial = doc.fields.get(field.name) %}
+      {% include partial_filename ignore missing with context %}
+    {% endwith %}
+  {% endfor %}
+{% endmacro %}
