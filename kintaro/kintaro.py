@@ -73,8 +73,7 @@ def _get_base_field(field):
     localization_removed = field.split('@')[0]
     if localization_removed[0] == '$':
         return localization_removed[1:]
-    else:
-        return localization_removed
+    return localization_removed
 
 
 class GroupedEntry(object):
