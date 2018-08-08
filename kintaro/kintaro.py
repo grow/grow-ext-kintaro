@@ -123,6 +123,9 @@ class GroupedEntry(object):
         # Default to unlocalized when list values are not sent
         if len(new_list) == 0:
             return original_list[:]
+        # Default to unlocalized if all values are null
+        elif len(new_list) == len([x for x in new_list if x is None]):
+            return original_list[:]
         elif len(original_list) != len(new_list):
             return new_list
         else:
