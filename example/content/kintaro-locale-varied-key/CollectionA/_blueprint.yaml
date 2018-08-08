@@ -1,0 +1,4 @@
+$path: /kintaro-locale-varied-key/a/
+$view: /views/partials.html
+localization:
+  path: /intl/{locale}/kintaro-locale-varied-key/a/
