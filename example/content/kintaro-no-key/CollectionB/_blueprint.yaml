@@ -1,0 +1,4 @@
+$path: /kintaro-no-key/b/
+$view: /views/partials.html
+localization:
+  path: /intl/{locale}/kintaro-no-key/b/
