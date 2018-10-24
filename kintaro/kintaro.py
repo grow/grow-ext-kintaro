@@ -120,8 +120,8 @@ class GroupedEntry(object):
 
     @staticmethod
     def merge_lists(original_list, new_list, locale):
-        # Default to unlocalized when list values are not sent
-        if len(new_list) == 0:
+        # Default to unlocalized when list values are not sent or are all None
+        if len([x for x in new_list if x is not None]) == 0:
             return original_list[:]
         elif len(original_list) != len(new_list):
             return new_list
