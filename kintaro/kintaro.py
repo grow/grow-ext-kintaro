@@ -7,6 +7,7 @@ import os
 import re
 import grow
 import httplib2
+import slugify
 from googleapiclient import discovery
 from grow.common import oauth
 from grow.common import utils
@@ -62,6 +63,7 @@ class BindingMessage(messages.Message):
     collection = messages.StringField(1)
     kintaro_collection = messages.StringField(2)
     key = messages.StringField(3)
+    slugify_key = messages.BooleanField(4, default=True)
 
 
 class LocaleAliasMessage(messages.Message):
@@ -373,21 +375,25 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
     def _get_doc_id(entry):
         return str(entry['document_id']).decode('utf-8')
 
-    def _get_basename_from_entry(self, entry, key=None):
+    def _get_basename_from_entry(self, entry, key=None, slugify_key=None):
         doc_id = KintaroPreprocessor._get_doc_id(entry)
         if doc_id not in self._id_map:
-            self._set_basename_from_entry(entry, key)
+            self._set_basename_from_entry(entry, key, slugify_key=slugify_key)
         return '{}.yaml'.format(self._id_map[doc_id])
 
     def _get_entry_field_data(self, entry):
         return json.loads(entry.get('content_json', '{}'))
 
-    def _set_basename_from_entry(self, entry, key=None):
+    def _set_basename_from_entry(self, entry, key=None, slugify_key=None):
+        slugify_key = True if slugify_key is None else slugify_key
         doc_id = KintaroPreprocessor._get_doc_id(entry)
         if key:
             fields = self._get_entry_field_data(entry)
             if key in fields:
-                self._id_map[doc_id] = fields[key]
+                basename = fields[key]
+                if slugify_key:
+                    basename = slugify.slugify(basename)
+                self._id_map[doc_id] = basename
             else:
                 raise InvalidKeyField(
                     'Could not find field "{}" in document {}'.format(
@@ -395,7 +401,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         else:
             self._id_map[doc_id] = doc_id
 
-    def _parse_entry(self, collection_path, entry, key=None, locale=None):
+    def _parse_entry(self, collection_path, entry, key=None, locale=None, slugify_key=None):
         deployments = self.pod.yaml.get('deployments', {}).keys()
         if deployments and not self._env_regex:
             self._env_regex = re.compile(
@@ -408,7 +414,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         fields = self._get_entry_field_data(entry)
         fields['document_id'] = KintaroPreprocessor._get_doc_id(entry)
         # Use the fields to get access to all content.
-        basename = self._get_basename_from_entry(fields, key=key)
+        basename = self._get_basename_from_entry(fields, key=key, slugify_key=slugify_key)
         clean_fields = {}
         # Preserve existing built-in fields prefixed with $.
         path = os.path.join(collection_path, basename)
@@ -454,7 +460,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         # removed code.
 
     def download_entries(self, repo_id, collection_id, project_id,
-                         kintaro_locale=None, document_id=None, key=None):
+                         kintaro_locale=None, document_id=None, key=None,
+                         slugify_key=None):
         body = {
             'repo_id': repo_id,
             'collection_id': collection_id,
@@ -477,7 +484,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             documents_from_get = self._get_documents_from_search(
                 repo_id, collection_id, project_id, documents,
                 kintaro_locale=kintaro_locale)
-            self._update_id_map(documents_from_get, kintaro_locale, key)
+            self._update_id_map(documents_from_get, kintaro_locale, key,
+                                slugify_key=slugify_key)
             return documents_from_get
 
         # Reformat document response to include schema.
@@ -501,7 +509,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                     project_id=self.config.project,
                     kintaro_locale=alias,
                     document_id=document_id,
-                    key=binding.key)
+                    key=binding.key,
+                    slugify_key=binding.slugify_key)
 
                 entries_by_locale[locale] = downloaded_entries
             entries_by_binding[binding] = entries_by_locale
@@ -581,7 +590,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                             'Unable to retrieve {}'.format(document_id))
 
                     fields, _, _, _ = self._parse_entry(
-                        collection_path, entry, key=binding.key)
+                        collection_path, entry, key=binding.key,
+                        slugify_key=binding.slugify_key)
                     doc.inject(fields, body='')
                     return doc
 
@@ -602,13 +612,13 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         else:
             return kintaro_locale
 
-    def _update_id_map(self, raw_entries, kintaro_locale, key):
+    def _update_id_map(self, raw_entries, kintaro_locale, key, slugify_key=None):
         # Only want to grab key values from base locale
         if kintaro_locale is not None:
             return
 
         for entry in raw_entries:
-            self._set_basename_from_entry(entry, key)
+            self._set_basename_from_entry(entry, key, slugify_key=slugify_key)
 
     def run(self, *args, **kwargs):
         entries_by_binding = self.download_and_group_entries(self.config.bind)

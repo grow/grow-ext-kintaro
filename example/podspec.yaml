@@ -53,6 +53,14 @@ preprocessors:
     key: no_locale_key_field
 
 - <<: *localized_kintaro_preprocess
+  name: kintaro-slug-key
+  bind:
+  - collection: /content/kintaro-slug-key/PartialPage/
+    kintaro_collection: PartialPage
+    key: title
+    slugify_key: true
+
+- <<: *localized_kintaro_preprocess
   name: kintaro-translatable-key
   bind:
   - collection: /content/kintaro-translatable-key/PartialPage/

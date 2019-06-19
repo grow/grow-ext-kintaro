@@ -13,5 +13,6 @@ setup(
     ],
     install_requires=[
         'google-api-python-client==1.6.2',
+        'python-slugify==3.0.2',
     ],
 )
