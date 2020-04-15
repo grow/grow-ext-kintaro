@@ -1,1 +1,1 @@
-from kintaro import *
+from .kintaro import *
