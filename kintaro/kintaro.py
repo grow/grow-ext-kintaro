@@ -163,7 +163,7 @@ class _GoogleServicePreprocessor(grow.Preprocessor):
     def create_service(self, host):
         credentials = oauth.get_or_create_credentials(
             scope=OAUTH_SCOPES, storage_key=STORAGE_KEY)
-        http = httplib2.Http(ca_certs=utils.get_cacerts_path())
+        http = httplib2.Http()
         http = credentials.authorize(http)
         # Kintaro's server doesn't seem to be able to refresh expired tokens
         # properly (responds with a "Stateless token expired" error). So we
@@ -373,7 +373,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
     @staticmethod
     def _get_doc_id(entry):
-        return str(entry['document_id']).decode('utf-8')
+        return str(entry['document_id'])
 
     def _get_basename_from_entry(self, entry, key=None, slugify_key=None):
         doc_id = KintaroPreprocessor._get_doc_id(entry)
@@ -513,6 +513,8 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                     slugify_key=binding.slugify_key)
 
                 entries_by_locale[locale] = downloaded_entries
+            # NOTE: Python3 compatibility -- binding needs to be hashable.
+            # Refactor this data structure.
             entries_by_binding[binding] = entries_by_locale
 
         result = {}
