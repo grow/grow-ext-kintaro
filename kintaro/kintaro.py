@@ -237,8 +237,17 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
         # Sorting locales ensures the default locale (None) is the first locale
         # to be stored in the GroupedEntry
-        sorted_locales = entries_by_locale.keys()
-        sorted_locales.sort()
+        raw_sorted_locales = [
+            e for e in entries_by_locale.keys() if e is not None]
+        raw_sorted_locales.sort()
+
+        if None not in entries_by_locale.keys():
+            sorted_locales = raw_sorted_locales
+        else:
+            sorted_locales = [None]
+            for locale in raw_sorted_locales:
+                sorted_locales.append(locale)
+
         for locale in sorted_locales:
             for entry in entries_by_locale[locale]:
                 fields = self._get_entry_field_data(entry)
@@ -362,7 +371,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
     def _parse_field_value(self, value, names_to_schema_fields, locale=None):
         clean_value = {}
-        for sub_key, sub_value in value.iteritems():
+        for sub_key, sub_value in value.items():
             raw_key = _get_base_field(sub_key)
             new_key = self._parse_field_key(
                 sub_key, names_to_schema_fields[raw_key], locale=locale)
@@ -421,12 +430,12 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         doc = self.pod.get_doc(path)
         front_matter_data = doc.format.front_matter.data
         if front_matter_data:
-            for field_key, value in front_matter_data.iteritems():
+            for field_key, value in front_matter_data.items():
                 if not field_key.startswith('$'):
                     continue
                 clean_fields[field_key] = value
         # Overwrite with data from CMS.
-        for name, value in fields.iteritems():
+        for name, value in fields.items():
             if name == 'document_id':
                 clean_fields[name] = value
                 continue
@@ -498,8 +507,9 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         return documents
 
     def download_and_group_entries(self, bindings, document_id=None):
-        entries_by_binding = {}
-        for binding in bindings:
+        entries_with_binding = []
+        for i in range(len(bindings)):
+            binding = bindings[i]
             entries_by_locale = {}
             for locale in self._get_locale_strings():
                 alias = self._get_kintaro_locale_from_locale_string(locale)
@@ -513,18 +523,19 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                     slugify_key=binding.slugify_key)
 
                 entries_by_locale[locale] = downloaded_entries
-            # NOTE: Python3 compatibility -- binding needs to be hashable.
-            # Refactor this data structure.
-            entries_by_binding[binding] = entries_by_locale
 
-        result = {}
-        for binding, entries_by_locale in entries_by_binding.items():
+            entries_with_binding.append([binding, entries_by_locale])
+
+        results = []
+        for [binding, entries_by_locale] in entries_with_binding:
             grouped_entries = self._group_entries(
-                entries_by_locale, binding.collection, key=binding.key)
-            result[binding] = [grouped_entry.to_raw_entry()
-                               for grouped_entry in grouped_entries]
+                    entries_by_locale, binding.collection, key=binding.key)
+            results.append([
+                    binding,
+                    [grouped_entry.to_raw_entry()
+                     for grouped_entry in grouped_entries]])
 
-        return result
+        return results
 
     def download_entry(self, document_id, collection_id, repo_id, project_id):
         return self._download_entry(
@@ -579,7 +590,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             for binding in self.config.bind:
                 if self._normalize(binding.collection) == collection_path:
                     entries = self.download_and_group_entries(
-                        [binding], document_id=document_id)[binding]
+                        [binding], document_id=document_id)[0]
                     entry = None
                     for entry_candidate in entries:
                         if KintaroPreprocessor._get_doc_id(
@@ -623,9 +634,9 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             self._set_basename_from_entry(entry, key, slugify_key=slugify_key)
 
     def run(self, *args, **kwargs):
-        entries_by_binding = self.download_and_group_entries(self.config.bind)
+        entries_with_bindings = self.download_and_group_entries(self.config.bind)
 
-        for binding, entries in entries_by_binding.items():
+        for [binding, entries] in entries_with_bindings:
             self.bind_collection(entries, binding.collection)
 
         # Handle deleted.
