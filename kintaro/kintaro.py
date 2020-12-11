@@ -345,6 +345,11 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                             binding.collection, filename)
                         value[idx] = self.pod.get_doc(
                             content_path, locale=locale)
+                        # Create the doc if it does not exist.
+                        # Prevent dependency problems when new docs
+                        # that do not exist yet because of import order.
+                        if not value[idx].exists:
+                            value[idx].write()
                         break
         elif 'schema_fields' in field_data:
             names_to_schema_fields = self._regroup_schema(
