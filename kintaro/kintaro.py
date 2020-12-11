@@ -330,6 +330,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                 if field_data['type'] == 'BooleanField':
                     if value == True:
                         raise RemoveValueError()
+                    return None
 
                 # For a tagged environment, if the value is null it falls back.
                 if value is None:
