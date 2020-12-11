@@ -349,7 +349,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                         # Prevent dependency problems when new docs
                         # that do not exist yet because of import order.
                         if not value[idx].exists:
-                            value[idx].write()
+                            value[idx].write(fields={})
                         break
         elif 'schema_fields' in field_data:
             names_to_schema_fields = self._regroup_schema(
