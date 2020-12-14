@@ -522,6 +522,14 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                 'return_schema': True,
             }
         }
+
+        download_message = 'Downloading documents from {collection} in the {locale} locale'
+        if kintaro_locale is None:
+            download_message = 'Downloading documents from {collection}'
+        self.pod.logger.info(
+            download_message.format(
+                collection=collection_id, locale=kintaro_locale))
+
         try:
             resp = self.service.documents().searchDocuments(body=body).execute()
         except ssl.SSLError:
