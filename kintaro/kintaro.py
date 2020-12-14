@@ -506,15 +506,20 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
     def download_entries(self, repo_id, collection_id, project_id,
                          kintaro_locale=None, document_id=None, key=None,
                          slugify_key=None):
+        # See kintaro/content/protos/document.proto : SearchRequest
         body = {
             'repo_id': repo_id,
             'collection_id': collection_id,
             'project_id': project_id,
             'document_id': document_id,
+            # See kintaro/content/protos/search.proto : ResultOptions
             'result_options': {
+                'limit': 1000,
+                'locale': kintaro_locale,
+                # TODO: Allow for pagination of requests?
+                # 'offset': 1001
                 'return_json': True,
                 'return_schema': True,
-                'locale': kintaro_locale,
             }
         }
         try:
@@ -677,7 +682,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         # Handle deleted.
         for pod_path in self._removed:
             if pod_path in self._in_use:
-                self.pod.logger.info('Skipping delete for in use reference -> {}'.format(pod_path))
+                self.pod.logger.info('Skipping delete for in-use reference -> {}'.format(pod_path))
                 continue
             self.pod.delete_file(pod_path)
             self.pod.logger.info('Deleted -> {}'.format(pod_path))
