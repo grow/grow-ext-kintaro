@@ -88,8 +88,11 @@ class GroupedEntry(object):
     def is_document_reference(data):
         document_signature_a = [u'collection_id', u'repo_id', u'document_id']
         document_signature_b = [u'document_label'] + document_signature_a
-        return data.keys() == document_signature_a or (
-            data.keys() == document_signature_b)
+        # Sort is required for list comparison. As lists might have the same keys but not sorted in the same way.
+        data_keys = list(data.keys())
+        data_keys.sort()
+        return data_keys == document_signature_a.sort() or (
+            data_keys == document_signature_b.sort())
 
     @staticmethod
     def merge_data(original_data, new_data, locale):
