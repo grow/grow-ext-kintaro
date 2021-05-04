@@ -44,6 +44,11 @@ class Error(Exception):
     pass
 
 
+class RemoveValueError(Error):
+    """Field needs to be removed from the document."""
+    pass
+
+
 class UnknownReferenceError(Error):
     """Error finding the referenced kintaro document."""
     pass
@@ -201,6 +206,7 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         self._env_regex_match = None
         self._env_regex_replace = r'@env.\1'
         self._removed = set()
+        self._in_use = set()
         self._id_map = {}
         self._kintaro_locale_to_locale_strings = None
         self._locale_strings_to_kintaro_locale = None
@@ -291,12 +297,6 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
         pod_paths_to_delete = set(existing_pod_paths) - set(new_pod_paths)
         self._removed = self._removed | pod_paths_to_delete
 
-    def _fix_path_none(self, key, value):
-        if self._env_regex_match and self._env_regex_match.search(key):
-            if key.startswith(('path', '$path')) and value is None:
-                return ''
-        return value
-
     def _regroup_schema(self, schema):
         names_to_fields = {}
         for field in schema:
@@ -322,10 +322,23 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             key = '${}'.format(key)
 
         value = self._parse_field_deep(key, value, field_data, locale=locale)
-        value = self._fix_path_none(key, value)
         return key, value
 
     def _parse_field_deep(self, key, value, field_data, locale=None):
+        # For tagged environment paths it cannot be null or it falls back.
+        if self._env_regex_match and self._env_regex_match.search(key):
+            if key.startswith(('path', '$path')):
+                # If we are modifying the path with a boolean, and it is true,
+                # We want it to be 'published', so we remove the tagged value.
+                if field_data['type'] == 'BooleanField':
+                    if value == True:
+                        raise RemoveValueError()
+                    return None
+
+                # For a tagged environment, if the value is null it falls back.
+                if value is None:
+                    return ''
+
         # Early exit for nothings
         if value is None:
             return None
@@ -348,6 +361,17 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                             binding.collection, filename)
                         value[idx] = self.pod.get_doc(
                             content_path, locale=locale)
+
+                        # Create the doc if it does not exist.
+                        # Prevent dependency problems when new docs
+                        # that do not exist yet because of import order.
+                        if not value[idx].exists:
+                            value[idx].write(fields={})
+
+                        # Track which documents are being referenced so they
+                        # do not get deleted by accident.
+                        self._in_use.add(value[idx].pod_path)
+
                         break
         elif 'schema_fields' in field_data:
             names_to_schema_fields = self._regroup_schema(
@@ -358,7 +382,6 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                     locale=locale)
         if single_field:
             value = value[0]
-        value = self._fix_path_none(key, value)
 
         return value
 
@@ -444,9 +467,21 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
                 continue
             raw_name = _get_base_field(name)
             field_data = names_to_schema_fields[raw_name]
-            key, value = self._parse_field(
-                name, value, field_data, locale=locale)
-            clean_fields[key] = value
+            try:
+                key, value = self._parse_field(
+                    name, value, field_data, locale=locale)
+                clean_fields[key] = value
+
+                if key.startswith('$path') and value in ('', None):
+                    # When removing a path in a tagged environment, want it to
+                    # persist to the localized value as well.
+                    if self._env_regex_match and self._env_regex_match.search(key):
+                        localization = clean_fields.get('$localization', {})
+                        localization[key.lstrip('$')] = value
+                        clean_fields['$localization'] = localization
+
+            except RemoveValueError:
+                pass
         # Populate $meta.
         if schema:
             # Strip modified info from schema.
@@ -474,17 +509,30 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
     def download_entries(self, repo_id, collection_id, project_id,
                          kintaro_locale=None, document_id=None, key=None,
                          slugify_key=None):
+        # See kintaro/content/protos/document.proto : SearchRequest
         body = {
             'repo_id': repo_id,
             'collection_id': collection_id,
             'project_id': project_id,
             'document_id': document_id,
+            # See kintaro/content/protos/search.proto : ResultOptions
             'result_options': {
+                'limit': 1000,
+                'locale': kintaro_locale,
+                # TODO: Allow for pagination of requests?
+                # 'offset': 1001
                 'return_json': True,
                 'return_schema': True,
-                'locale': kintaro_locale,
             }
         }
+
+        download_message = 'Downloading documents from {collection} in the {locale} locale'
+        if kintaro_locale is None:
+            download_message = 'Downloading documents from {collection}'
+        self.pod.logger.info(
+            download_message.format(
+                collection=collection_id, locale=kintaro_locale))
+
         try:
             resp = self.service.documents().searchDocuments(body=body).execute()
         except ssl.SSLError:
@@ -644,6 +692,9 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
         # Handle deleted.
         for pod_path in self._removed:
+            if pod_path in self._in_use:
+                self.pod.logger.info('Skipping delete for in-use reference -> {}'.format(pod_path))
+                continue
             self.pod.delete_file(pod_path)
             self.pod.logger.info('Deleted -> {}'.format(pod_path))
 
