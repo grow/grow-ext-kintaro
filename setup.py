@@ -12,7 +12,7 @@ setup(
         'kintaro',
     ],
     install_requires=[
-        'google-api-python-client==1.6.2',
-        'python-slugify==3.0.2',
+        'google-api-python-client==1.9.3',
+        'python-slugify==4.0.0',
     ],
 )
