@@ -108,14 +108,14 @@ class GroupedEntry(object):
         final_data = copy.deepcopy(original_data)
         for field, value in new_data.items():
             localized_field = '{}@{}'.format(field, locale)
-            base_value = original_data[field]
+            base_value = original_data.get(field)
 
             if isinstance(value, dict):
                 if GroupedEntry.is_document_reference(value):
                     final_data[localized_field] = value
-                else:
+                elif base_value is not None:
                     final_data[field] = GroupedEntry.merge_data(
-                        original_data[field], value, locale)
+                        base_value, value, locale)
             elif isinstance(value, list):
                 new_value = GroupedEntry.merge_lists(base_value, value, locale)
                 if base_value != new_value:
