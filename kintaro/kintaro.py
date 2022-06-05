@@ -352,9 +352,13 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
             for idx in range(len(value)):
                 if not value[idx]:
                     continue
+                localized_coll_field = next(
+                    (k for k in value[idx].keys() if k.startswith('collection_id@')),
+                    ''
+                )
+                coll_field = localized_coll_field or 'collection_id'
                 for binding in self.config.bind:
-                    if binding.kintaro_collection == value[idx][
-                        'collection_id']:
+                    if binding.kintaro_collection == value[idx].get(coll_field):
                         filename = self._get_basename_from_entry(
                             value[idx], key=binding.key)
                         content_path = os.path.join(
@@ -408,7 +412,12 @@ class KintaroPreprocessor(_GoogleServicePreprocessor):
 
     @staticmethod
     def _get_doc_id(entry):
-        return str(entry['document_id'])
+        localized_doc_field = next(
+            (k for k in entry.keys() if k.startswith('document_id@')),
+            ''
+        )
+        doc_field = localized_doc_field or 'document_id'
+        return str(entry.get(doc_field))
 
     def _get_basename_from_entry(self, entry, key=None, slugify_key=None):
         doc_id = KintaroPreprocessor._get_doc_id(entry)
